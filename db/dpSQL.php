@@ -107,7 +107,7 @@ class dpSQL extends dpObject
             } // Do we have update fields?
         } // has params?
         
-        return false;
+        return (false);
     } // dpSQL_update_table_row
     
     
@@ -149,15 +149,16 @@ class dpSQL extends dpObject
             $value_list = array ();
             $where_clause = ' WHERE ';
             $field_count = count ($kv_where);
+            $idx = 0;
             foreach ($kv_where as $key => $value_data)
             {
                 $opr = trim ($value_data['opr']);
                 $value = $value_data['value'];
-                $conj = 'AND ';
+                $conj = 'AND';
                 
                 if ($opr)
                 {
-                    $where_clause .= '('.$key.' '.$opr.' ';
+                    $where_clause .= '('.$key.$opr;
                     if (is_array ($value))
                         $where_clause .= '('.$indx.') ';
                     else
@@ -165,10 +166,10 @@ class dpSQL extends dpObject
                     $where_clause .= ') ';
                     
                     if (isset ($value_data['conj']))
-                        $conj = $value_data['conj'];
+                        $conj = trim ($value_data['conj']);
                     
-                    if ($indx < $field_count)
-                        $where_clause .= $conj;
+                    if (++$idx < $field_count)
+                        $where_clause .= $conj.' ';
                     
                     $value_list[] = $value;
                     $indx++;
@@ -192,7 +193,7 @@ class dpSQL extends dpObject
             return ($this->dpSQL_query_params ($sql, $where_values));
         } // has params?
         
-        return false;
+        return (false);
     } // dpSQL_delete_table_row
     
     
@@ -214,8 +215,26 @@ class dpSQL extends dpObject
             return ($this->dpSQL_query_params ($sql, $where_values));
         } // has params?
         
-        return false;
+        return (false);
     } // dpSQL_select_table_row
+    
+    
+    public function dpSQL_fetch_row ($params = false)
+    {
+        if ($params && is_array ($params) && !empty ($params) && (pg_num_rows ($params['result']) > 0))
+            return (pg_fetch_array ($params['result'], $params['row'], PGSQL_ASSOC));
+        
+        return (NULL);
+    } // dpSQL_fetch_first_row
+    
+    
+    public function dpSQL_fetch_all_rows ($params = false)
+    {
+        if ($params)
+            return (pg_fetch_all ($params, PGSQL_ASSOC));
+        
+        return (NULL);
+    } // dpSQL_fetch_first_row    
     
     
     public function dpSQL_query ($sql = false)

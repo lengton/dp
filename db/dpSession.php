@@ -73,11 +73,8 @@ class dpSession extends dpData
         $this->host_ip = @$_SERVER['REMOTE_ADDR'];
         
         // SET SESSION COOKIE
-        if (isset ($_COOKIE['dpSID']) && false)
-        {
+        if (isset ($_COOKIE['dpSID']))
             $this->sid = $_COOKIE['dpSID'];
-            $this->log('Set dpSID='.$this->sid);
-        } 
         else 
         {
             // Build session ID
@@ -97,5 +94,48 @@ class dpSession extends dpData
             } // SAVE BROWSER INFO
         } // SET SESSION KEY
     } // startSession
+    
+    
+    public function set ($key = false, $value = false, $opt = false)
+    {
+        if ((trim ($key) != false) && $this->sid)
+        {
+            $opts = array (dpConstants::DB_UPDATE_OR_INSERT => true);
+            if (is_array ($opt) && !empty ($opt))
+                $opts = $opt;
+            return ($this->update (array ('sid' => $this->sid, 'key' => $key, 'value' => $value, 'modified' => 'NOW()'), $opts));
+        } // Do we have a key?
+
+        return (false);        
+    } // set
+    
+    
+    public function get ($key = false, $opt = false)
+    {
+        if ((trim ($key) != false) && $this->sid)
+        {
+            if ($result = $this->select (array ('sid' => $this->sid, 'key' => $key, 'value' => false), $opt))
+            {
+                $row = $this->get_row (0);
+                return ($row['value']);
+            } // Has result?
+        } // Do we have a key?
+
+        return (false);        
+    } // get
+
+
+    public function clear ($key = false)
+    {
+        if ($this->sid)
+        {
+            $kv_pair = array ('sid' => $this->sid);
+            if (trim ($key) != false)
+                $kv_pair['key'] = $key;
+            return ($this->delete ($kv_pair));
+        } // Do we have an SID?
+        
+        return (false);
+    } // clear
 } // dpSession
 ?>

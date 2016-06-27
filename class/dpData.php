@@ -48,7 +48,7 @@ class dpData extends dpSQL
     public function createTable ($drop_table = true)
     {
         $params = array ('drop_table' => $drop_table);
-        return ($this->dpCallSQL('create_table', $params));
+        return ($this->dpCallSQL ('create_table', $params));
     } // createTable
 
 
@@ -75,13 +75,23 @@ class dpData extends dpSQL
         $this->db_result = false;
         if ($db_params = $this->select_helper ($kv_pair, $params))
         {
-            $this->db_result = $this->dpCallSQL('update_table_row', $db_params);
-            if ($this->db_result && ($this->dpCallSQL('affected_rows', $this->db_result) == 0))
+            $cleaned_kv_pair = $db_params['data'];
+            if (isset ($db_params['where']) && !empty ($db_params['where']))
+            {
+                $where = $db_params['where'];
+                foreach ($cleaned_kv_pair as $key => $value)
+                {
+                    if (isset ($where[$key]))
+                        unset ($db_params['data'][$key]);
+                } // Iterate on all key-value pair for update
+            } // Do we have the 'where' clause?
+            $this->db_result = $this->dpCallSQL ('update_table_row', $db_params);
+            if ($this->db_result && ($this->dpCallSQL ('affected_rows', $this->db_result) == 0))
             {
                 if (!empty ($params) && isset ($params[dpConstants::DB_UPDATE_OR_INSERT]))
-                    $this->db_result = $this->dpCallSQL('insert_table_row', $kv_pair);
+                    $this->db_result = $this->dpCallSQL ('insert_table_row', $cleaned_kv_pair);
             } // Do we need to insert on zero affected rows?
-        } // Has table definition?
+        } // Has select information??
 
         return ($this->db_result);
     } // update
@@ -116,7 +126,7 @@ class dpData extends dpSQL
             } // foreach
             
             // Insert table
-            $this->db_result = $this->dpCallSQL('insert_table_row', $kv_pair);
+            $this->db_result = $this->dpCallSQL ('insert_table_row', $kv_pair);
         } // Has table definition?
 
         return ($this->db_result);
@@ -127,20 +137,54 @@ class dpData extends dpSQL
     {
         $this->db_result = false;
         if ($db_params = $this->select_helper ($kv_pair, $params))
-            $this->db_result = $this->dpCallSQL('select_table_row', $db_params);
+        {
+            if (isset ($db_params['where']) && !empty ($db_params['where']))
+            {
+                $where = $db_params['where'];
+                foreach ($db_params['data'] as $key => $value)
+                {
+                    if (isset ($where[$key]))
+                        unset ($db_params['data'][$key]);
+                } // Iterate on all key-value pair for update
+            } // Do we have the 'where' clause?
+            
+            $this->db_result = $this->dpCallSQL ('select_table_row', $db_params);
+        } // Has select information?
 
         return ($this->db_result);
     } // select
+    
+    
+    public function get_row ($row = NULL)
+    {
+        if ($this->db_result)
+        {
+            return ($this->dpCallSQL ('fetch_row', array ('result' => $this->db_result, 'row' => $row)));
+        } // has last db_result?
+        
+        return (NULL);
+    } // get_row
+    
+    
+    public function get_rows ()
+    {
+        if ($this->db_result)
+        {
+            return ($this->dpCallSQL ('fetch_all_rows', $this->db_result));
+        } // has last db_result?
+        
+        return (NULL);
+    } // get_rows
     
     
     public function delete ($kv_pair, $params = false)
     {
         $this->db_result = false;
         if ($db_params = $this->select_helper ($kv_pair, $params))
-            $this->db_result = $this->dpCallSQL('delete_table_row', $db_params);
+            $this->db_result = $this->dpCallSQL ('delete_table_row', $db_params);
 
         return ($this->db_result);
-    } // select
+    } // delete
     
     
     /*
