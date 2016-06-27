@@ -22,14 +22,15 @@ class dpPage extends dpData
     private $sid = false;
     private $host_ip = false;
     
-    private $dpURL = false;
+    protected $dpURL = false;
     private static $dpTag = false;
     private static $dpTagLen = 0;
     private $template_data = false;
     private $page_object = false;
 
     private static $register_autoload = false;
-    private static $page_session = false;
+    private static $autoload_path = false;
+    public $session = false;
     
     
     function __construct ($config = false, $url = false)
@@ -42,6 +43,7 @@ class dpPage extends dpData
         // Initializations
         self::$dpTag = '<'.dpConstants::DP_TAG.':';
         self::$dpTagLen = strlen (self::$dpTag);
+        self::$autoload_path = array ();
     } // __construct
     
     
@@ -50,13 +52,47 @@ class dpPage extends dpData
         // REGISTER APP CLASSES AUTOLOAD FUNCTION
         spl_autoload_register (function ($class)
         {
-            $class = str_replace ('\\', '/', ltrim ($class, "/\t\r\r\0\x0B "));
-            $class_path =  sprintf ("%s/%s/%s", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CLASS, $class.'.php');
-            if (file_exists ($class_path))
+            if (self::$register_autoload === false)
             {
-                // dpApp Classes
-                require_once $class_path;
-            }  // dp App Classes
+                self::$register_autoload = array();
+            } // Initialize app dir cache
+
+            // First level
+            $class = str_replace ('\\', '/', ltrim ($class, "/\t\r\r\0\x0B "));
+            $class_path =  sprintf ("%s/%s/", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CLASS);
+
+            if (file_exists ($class_file = $class_path.$class.dpConstants::DP_PHP_EXTENSION))
+            {
+                require_once $class_file;
+            } else {
+                // Go through one more level under this dir
+                if (empty (self::$register_autoload))
+                {
+                    $files = scandir ($class_path);
+                    foreach ($files as $file)
+                    {
+                        if (is_dir ($class_path.$file))
+                        {
+                            self::$register_autoload[] = $class_path.$file.'/';
+                        }
+                    }
+                } // Cache second level directories
+                
+                if (!empty (self::$autoload_path) && file_exists (self::$autoload_path[$class]))
+                {
+                    require_once self::$autoload_path[$class];
+                } else {
+                    // Search and cache include path
+                    foreach (self::$register_autoload as $path)
+                    {
+                        if (file_exists ($class_file = $path.$class.dpConstants::DP_PHP_EXTENSION))
+                        {
+                            self::$autoload_path[$class] = $path.$class.dpConstants::DP_PHP_EXTENSION;
+                            require_once $class_file;
+                        }
+                    } // foreach
+                } // Is the path cached?
+            } // dp App Classes
         }); // spl_autoload_register
     } // register_autoload
     
@@ -70,21 +106,20 @@ class dpPage extends dpData
         if ($this->dpURL && ($this->dpURL->valid === true))
         {
             // REGISTER APP AUTOLOAD FUNCTION
-            if (dpPage::$register_autoload === false)
+            if (self::$register_autoload === false)
             {
                 $this->register_autoload ();
-                dpPage::$register_autoload = true;
             } // Register dp App autoload functioN?
             
             // Get the URL file target (always a file not a directory)
             $url_target_info = $this->getInfo ('page_url_target_info');
             
+            // Start Page Session
+            $this->startSession();
+            
             // Load page elements, if any
             if (!empty ($url_target_info) && ($this->page_object = $this->loadPage (array ('url_target_info' => $url_target_info))))
             {
-                // START SESSION
-                $this->startSession();
-                
                 // Call dpStart before anything else
                 $out .= $this->page_object->callMethod (dpConstants::TAGNAME_STARTPAGE, true);
                 
@@ -129,33 +164,10 @@ class dpPage extends dpData
     
     public function startSession ()
     {
-        // Get Remote Address
-        $this->host_ip = @$_SERVER['REMOTE_ADDR'];
-        
-        // SET SESSION COOKIE
-        if (isset ($_COOKIE['dpSID']))
-        {
-            $this->sid = $_COOKIE['dpSID'];
-        } else {
-            // Build session ID
-            $this->sid = md5 (uniqid (mt_rand (), true)).md5 (uniqid (mt_rand (), true));
-            setcookie ('dpSID', $this->sid, 0, '/');
-            
-            // COLLECT INFO
-            if ($this->host_ip)
-            {
-                // Check if Hosts exists in our database
-                //$this->dbSave ('access', array ('host_ip' => $this->host_ip, 'browser' => @$_SERVER['HTTP_USER_AGENT']));
-            } // SAVE BROWSER INFO
-        } // SET SESSION KEY
-        
-        // Initialize Session Object
-        if (self::$page_session === false)
+        if ($this->session === false)
         {
             // Create dpSession Object
-            if (self::$page_session = new dpSession ())
-                self::$page_session->setSID ($this->sid);
-            else $this->log ('dpSession: Session Object failed.');
+            $this->session = new dpSession ();
         } // Do we have a session object?
     } // startSession
     
@@ -350,7 +362,7 @@ class dpPage extends dpData
         $page_path = $this->getInfo ('page_fullpath');
         $page_class_name = $this->getInfo ('page_class_name');
         
-        // CHECK FOR PASSE PARAMETERS
+        // CHECK FOR PASSED PARAMETERS
         if (is_array ($params))
         {
             if (isset ($params['cache_path']) && strlen ($params['cache_path']))
@@ -408,7 +420,7 @@ class dpPage extends dpData
             require_once $cached_pg;
             
             $class_name = dpConstants::DP_PAGE_CLASS_PREFIX.$page_class_name;
-            return (new $class_name ($this->dpURL, $url_target_info));
+            return (new $class_name ($this));
         } // Require page file
         
         return (false);

@@ -20,15 +20,40 @@
 class dpSession extends dpData
 {
     public $sid = false;
+    private $host_ip = false;
+    private static $clientAccess = false;
     
     
-    public $table_def = array(
-        'sid' => array ('type' => 'varchar(128)', 'null' => false, 'index' => true),
-        'uid' => array ('type' => 'bigint', 'null' => true, 'index' => true),
-        'key' => array ('type' => 'varchar(256)', 'null' => true, 'index' => true, 'default' => 'NULL'),
-        'value' => array ('type' => 'text', 'null' => true, 'default' => 'NULL'),
-        'created' => array ('type' => 'timestamp', 'default' => 'NOW()', 'null' => false),
-        'modified' => array ('type' => 'timestamp', 'default' => 'NOW()', 'null' => true)
+    public $table_def = array
+    (
+        'sid' => array (
+                    'type' => 'varchar',
+                    'length' => 128, 
+                    'null' => false, 
+                    'index' => true
+                ),
+        'key' => array (
+                    'type' => 'varchar',
+                    'length' => 256, 
+                    'null' => true, 
+                    'index' => true, 
+                    'default' => 'NULL'
+                ),
+        'value' => array (
+                    'type' => 'text',
+                    'null' => true, 
+                    'default' => 'NULL'
+                ),
+        'created' => array (
+                    'type' => 'timestamp',
+                    'default' => 'NOW()', 
+                    'null' => false
+                ),
+        'modified' => array (
+                    'type' => 'timestamp',
+                    'default' => 'NOW()',
+                    'null' => true
+                )
     );
     
   
@@ -36,13 +61,41 @@ class dpSession extends dpData
     {
         parent::__construct ($config);
         $this->table_name = __CLASS__;
+
+        self::$clientAccess = new dpClientAccess ();
+        $this->startSession ();
     } // __construct
     
     
-    public function setSID ($sid = false)
+    public function startSession ()
     {
-        if (strlen ($sid))
-            $this->sid = $sid;
-    } // setSID    
+        // Get Remote Address
+        $this->host_ip = @$_SERVER['REMOTE_ADDR'];
+        
+        // SET SESSION COOKIE
+        if (isset ($_COOKIE['dpSID']) && false)
+        {
+            $this->sid = $_COOKIE['dpSID'];
+            $this->log('Set dpSID='.$this->sid);
+        } 
+        else 
+        {
+            // Build session ID
+            $this->sid = md5 (uniqid (mt_rand (), true)).md5 (uniqid (mt_rand (), true));
+            setcookie ('dpSID', $this->sid, 0, '/');
+            
+            // COLLECT INFO
+            if ($this->host_ip && self::$clientAccess)
+            {
+                // Update client access information
+                $kv_pair = array (
+                    'host_ip' => $this->host_ip, 
+                    'browser' => @$_SERVER['HTTP_USER_AGENT'],
+                    'modified' => 'NOW()'
+                );
+                self::$clientAccess->update ($kv_pair, array (dpConstants::DB_UPDATE_OR_INSERT => true));
+            } // SAVE BROWSER INFO
+        } // SET SESSION KEY
+    } // startSession
 } // dpSession
 ?>

@@ -32,6 +32,8 @@ class dpConstants
     const DP_DIR = '/dp';
     const DP_TAG = 'dp';
     const DP_SWITCH_RAWDIR = '.raw';
+    const DP_DATA_OPERATOR_PREFIX = 'opr_';
+    const DP_DATA_CONJUNCTION_PREFIX = 'conj_';
     
     const DP_COMMON_INCLUDE = 'dpInclude';
     
@@ -39,6 +41,9 @@ class dpConstants
     const DP_PAGE_CLASS_PREFIX = 'dpAppPage_';
     const DP_PAGE_CLASS_FUNC_PREFIX = 'dpAppPageFunc_';
     const DP_PAGE_CLASS_INDENT = '    ';
+    const DP_PHP_EXTENSION = '.php';
+    
+    const SQL_METHOD_PREFIX = 'dpSQL_';
     
     const SCRIPT_DATADIR_SUFFIX = '_dpApp';
     const SCRIPT_DATADIR_PAGES = 'pages';
@@ -57,6 +62,8 @@ class dpConstants
     const PARSE_STATE_ENDTAG = 5;
     const PARSE_STATE_PHPCODE = 6;
     const PARSE_STATE_IN_QUOTE = 7;
+    
+    const DB_UPDATE_OR_INSERT = 'dpUpdateOrInsert';
     
 } // dpConstants
 ?>

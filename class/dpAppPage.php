@@ -20,15 +20,17 @@
 class dpAppPage extends dpPage
 {
     private $page_data = false;
-    private $dpURL = false;
     private $url_target_info = false;
+    private $_this;
     
-    
-    function __construct ($dpURL = false, $url_target_info = false)
+    function __construct ($dpPageObject = false)
     {
+        $_this = $dpPageObject;
+        
         $this->page_data = array ();
-        $this->dpURL = $dpURL;
-        $this->url_target_info = $url_target_info;
+        $this->dpURL = $_this->dpURL;
+        $this->session = $_this->session;
+        $this->url_target_info = $_this->getInfo('page_url_target_info');
     } // __construct
     
     
@@ -40,7 +42,7 @@ class dpAppPage extends dpPage
 
     public function getValue ($tag = false)
     {
-        if (strlen ($tag) < 1)
+        if (trim ($tag) == false)
             return (false);
             
         // Page data has priority
@@ -52,7 +54,7 @@ class dpAppPage extends dpPage
     
     public function setValue ($tag = false, $value = false)
     {
-        if (strlen ($tag) && is_array ($this->page_data))
+        if ((trim ($tag) != false) && is_array ($this->page_data))
             $this->page_data[$tag] = $value;
         return ($value);
     } // setValue
@@ -61,7 +63,7 @@ class dpAppPage extends dpPage
     public function callMethod ($tag, $string = false)
     {
         $method = dpConstants::DP_PAGE_CLASS_FUNC_PREFIX.$tag;
-        if (strlen ($tag))
+        if (trim ($tag) != false)
         {
             // Does this method exists on this class?
             if (method_exists ($this, $method))

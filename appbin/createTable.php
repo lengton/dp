@@ -38,9 +38,12 @@ $dpPage->register_autoload ();
 if ($argc == 2)
 {
     try {
-        if ($obj = new $argv[1])
+        $obj = new $argv[1];
+        if (is_a ($obj, 'dpData'))
+        {
             $obj->createTable ();
-        echo 'Table "'.$obj->table_name.'" created.'.PHP_EOL;
+            echo 'Table "'.$obj->table_name.'" created.'.PHP_EOL;
+        } else throw new Exception ('Not a derived class of dpData'); 
     } catch (Exception $e) {
         echo 'DB Error: '.$e->getMessage().PHP_EOL;
     }
