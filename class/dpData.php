@@ -28,21 +28,8 @@ class dpData extends dpSQL
     public function __construct ($config = false)
     {
         parent::__construct ($config);
-        $this->processTableDefinition ();
+        $this->table_name = __CLASS__;
     } // __construct
-
-
-    public function processTableDefinition ()
-    {
-        if (!empty ($this->table_def) && is_array ($this->table_cache))
-        {
-            foreach ($this->table_def as $field => $def)
-            {
-                $this->table_cache['field_escape'][$field] = 
-                    (in_array (strtolower ($def['type']), self::$sql_escape_types) ? true : false);
-            } // foreach
-        }
-    } // processTableDefinition
 
 
     public function createTable ($drop_table = true)

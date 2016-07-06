@@ -17,7 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-class dpSQL extends dpObject
+abstract class dpSQL extends dpObject
 {
     public static $db = false;
     private static $dpSQL_query_cache = false;
@@ -49,7 +49,7 @@ class dpSQL extends dpObject
         $sql = '';
         if ($params && isset ($params['drop_table']))
         {
-            $sql .= 'DROP TABLE IF EXISTS '.$this->sqlEsc ($this->table_name).'; ';
+            $sql .= 'DROP TABLE IF EXISTS '.$this->sqlEsc ($this->table_name).' CASCADE; ';
         } // drop table?
         
         $index_fields = array ();
@@ -61,6 +61,8 @@ class dpSQL extends dpObject
             {
                 if (isset ($def['type']))
                     $colstr .= ' '.$def['type'];
+                if (isset ($def['unique']))
+                    $colstr .= ' UNIQUE';
                 if (isset ($def['len']))
                     $colstr .= '('.$def['len'].') ';
                 if (isset ($def['null']))
@@ -69,6 +71,24 @@ class dpSQL extends dpObject
                     $colstr .= ' DEFAULT '.$def['default'];
                 if (isset ($def['index']))
                     $index_fields[] = $col;
+                if (isset ($def['foreign_key']) && is_array ($def['foreign_key']) && !empty ($def['foreign_key']))
+                {
+                    $fk_data = $def['foreign_key'];
+                    if (isset ($fk_data['object']) && isset ($fk_data['field']) && ($obj = new $fk_data['object']))
+                    {
+                        $obj_field_def = $obj->table_def[$fk_data['field']];
+                        if (!empty ($obj_field_def))
+                        {
+                            if (!isset ($obj_field_def['unique']))
+                            {
+                                throw new dpException ('Reference field "'.$fk_data['field'].'" must have UNIQUE constraint');
+                            } // This field MUST be unique
+                            $colstr .= ' REFERENCES '.$obj->table_name.' ('.$fk_data['field'].')';
+                            if (isset ($fk_data['on']) && (trim ($fk_data['on']) !== false))
+                                $colstr .= ' ON '.$fk_data['on'];
+                        } else throw new dpException ('Reference table "'.$obj->table_name.'" field not found.');
+                    } // Has Object in DP system?
+                } // Has foreign key?
             } // Has definition array?
             $columns[] = $colstr;
         } // foreach

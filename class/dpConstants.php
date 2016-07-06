@@ -60,8 +60,11 @@ class dpConstants
     const PARSE_STATE_TAGNAME = 3;
     const PARSE_STATE_TAGBODY = 4;
     const PARSE_STATE_ENDTAG = 5;
-    const PARSE_STATE_PHPCODE = 6;
-    const PARSE_STATE_IN_QUOTE = 7;
+    const PARSE_STATE_TAGPARAMS = 6;
+    const PARSE_STATE_PHPCODE = 7;
+    const PARSE_STATE_IN_QUOTE = 8;
+    const PARSE_STATE_PARAM_NAME = 9;
+    const PARSE_STATE_PARAM_VALUE = 10;
     
     const DB_UPDATE_OR_INSERT = 'dpUpdateOrInsert';
     

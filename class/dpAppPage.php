@@ -40,7 +40,7 @@ class dpAppPage extends dpPage
     } // getData
 
 
-    public function getValue ($tag = false)
+    public function getValue ($tag = false, $params = false)
     {
         if (trim ($tag) == false)
             return (false);
@@ -48,7 +48,7 @@ class dpAppPage extends dpPage
         // Page data has priority
         if (!empty ($this->page_data) && isset ($this->page_data[$tag]))
             return ($this->page_data[$tag]);
-        return ($this->callMethod ($tag, true));
+        return ($this->callMethod ($tag, true, $params));
     } // getValue
     
     
@@ -60,7 +60,7 @@ class dpAppPage extends dpPage
     } // setValue
 
 
-    public function callMethod ($tag, $string = false)
+    public function callMethod ($tag, $string = false, $call_params = false)
     {
         $method = dpConstants::DP_PAGE_CLASS_FUNC_PREFIX.$tag;
         if (trim ($tag) != false)
@@ -69,6 +69,9 @@ class dpAppPage extends dpPage
             if (method_exists ($this, $method))
             {
                 $params = array();
+                if (is_array ($call_params) && !empty ($call_params))
+                    $params[] = $call_params;
+                    
                 if ($string === true)
                     ob_start();
                 

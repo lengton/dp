@@ -19,6 +19,8 @@
  
 class dpObject
 {
+    const VERSION = '1.0';
+    
     private static $dp_config = false;
 
 
