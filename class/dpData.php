@@ -142,7 +142,7 @@ class dpData extends dpSQL
     } // select
     
     
-    public function get_row ($row = NULL)
+    public function get_row ($row = 0)
     {
         if ($this->db_result)
         {
@@ -186,8 +186,9 @@ class dpData extends dpSQL
      *  Adding 'conj_db_field' => SQL conjuction ('AND', 'OR') changes the default 'AND' conjunction
      *  between the next where clause triplet.
      *
-     *  $params optional parameters
-     *  - dpConstants::DB_UPDATE_OR_INSERT: tries to update record, if none exists, then insert
+     *  $params array of optional where clause:
+     *  $params['where'] = array ('id', '<db_field>');
+     *
      */
     private function select_helper (&$kv_pair, &$params)
     {

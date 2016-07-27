@@ -107,9 +107,7 @@ class dpPage extends dpData
         {
             // REGISTER APP AUTOLOAD FUNCTION
             if (self::$register_autoload === false)
-            {
                 $this->register_autoload ();
-            } // Register dp App autoload functioN?
             
             // Get the URL file target (always a file not a directory)
             $url_target_info = $this->getInfo ('page_url_target_info');
@@ -165,10 +163,7 @@ class dpPage extends dpData
     public function startSession ()
     {
         if ($this->session === false)
-        {
-            // Create dpSession Object
             $this->session = new dpSession ();
-        } // Do we have a session object?
     } // startSession
     
     
@@ -344,6 +339,7 @@ class dpPage extends dpData
                                         $template_data[] = $tag_data;
                                         $tagname = '';
                                     } // Finalize data nugget
+                                    
                                     if ($line[$i] == '>')
                                     {
                                         $i++;
@@ -397,6 +393,7 @@ class dpPage extends dpData
         // If trigger clear cache
         if ($this->getConfig ('dpClearStatCache') === true)
             clearstatcache();
+
         if (!$exists_pg || ($exists_pg && $exists_pt && (filemtime ($page_path) > filemtime ($cached_pg))))
         {
             $this->log ('Cache clear: '.$page_path);
@@ -482,7 +479,7 @@ class dpPage extends dpData
                 fwrite ($fp, dpConstants::DP_PAGE_CLASS_INDENT."{\n");
                 
                 fwrite ($fp, dpConstants::DP_PAGE_CLASS_INDENT.dpConstants::DP_PAGE_CLASS_INDENT.'$dpArgs=array();'."\n");
-                fwrite ($fp, dpConstants::DP_PAGE_CLASS_INDENT.dpConstants::DP_PAGE_CLASS_INDENT.'if (($dp_args=func_get_arg(0)) && !empty($dp_args)) $dpArgs=$dp_args;'."\n\n");
+                fwrite ($fp, dpConstants::DP_PAGE_CLASS_INDENT.dpConstants::DP_PAGE_CLASS_INDENT.'if ((func_num_args() > 0) && ($dp_args=func_get_arg(0)) && !empty($dp_args)) $dpArgs=$dp_args;'."\n\n");
                 
                 foreach ($tag_items as $tag_item)
                 {
@@ -516,15 +513,28 @@ class dpPage extends dpData
                                                     break;
                                                     
                                                 case 'tag' :
-                                                    fwrite ($fp, 'echo $this->getValue (\''.addslashes ($pdata['name']).'\'');
-                                                    if (isset ($pdata['params']) && !empty ($pdata['params']))
+                                                    // GENRATE DP TAG CODE
+                                                    switch ($pdata['name'])
                                                     {
-                                                        $params = array();
-                                                        foreach ($pdata['params'] as $key => $value)
-                                                            $params[] = "'".$key."'=>'".$value."'";
-                                                        fwrite ($fp, ', array('.implode (',', $params).')');
-                                                    } // Have parameters?
-                                                    fwrite ($fp, ');'.PHP_EOL);
+                                                        case 'var' : // Output variable
+                                                            if (isset ($pdata['params']) && !empty ($pdata['params']) && isset ($pdata['params']['name']))
+                                                            {
+                                                                if (($lv_name = trim ($pdata['params']['name'])) !== false)
+                                                                    fwrite ($fp, 'echo (isset($'.$lv_name.')?$'.$lv_name.':"");'.PHP_EOL);
+                                                            } // We need parameters for this
+                                                            break;
+                                                            
+                                                        default :
+                                                            fwrite ($fp, 'echo $this->getValue (\''.addslashes ($pdata['name']).'\'');
+                                                            if (isset ($pdata['params']) && !empty ($pdata['params']))
+                                                            {
+                                                                $params = array();
+                                                                foreach ($pdata['params'] as $key => $value)
+                                                                    $params[] = "'".addslashes($key)."'=>'".addslashes($value)."'";
+                                                                fwrite ($fp, ', array('.implode (',', $params).')');
+                                                            } // Have parameters?
+                                                            fwrite ($fp, ');'.PHP_EOL);
+                                                    } // switch
                                             } // switch
                                         } // foreach -- elements
                                     } // foreach -- item
@@ -765,7 +775,7 @@ class dpPage extends dpData
         if ($pstr = trim ($param_string))
         {
             $i = 0;
-            $key = $value = '';
+            $quote_char = $key = $value = '';
             $pstate = dpConstants::PARSE_STATE_PARAM_NAME;
             while ($i < strlen ($pstr))
             {
@@ -785,6 +795,7 @@ class dpPage extends dpData
                     case dpConstants::PARSE_STATE_PARAM_VALUE:
                         if (strpos ("\"'", $pstr[$i]) !== false)
                         {
+                            $quote_char = $pstr[$i];
                             $i++;
                             $value = '';
                             $pstate = dpConstants::PARSE_STATE_IN_QUOTE;
@@ -801,7 +812,7 @@ class dpPage extends dpData
                         break;
                         
                     case dpConstants::PARSE_STATE_IN_QUOTE:
-                        if (strpos ("\"'", $pstr[$i]) !== false)
+                        if ($pstr[$i] == $quote_char)
                         {
                             $i++;
                             $params[trim ($key)] = trim ($value);

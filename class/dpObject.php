@@ -114,5 +114,6 @@ class dpObject
             syslog (LOG_NOTICE, print_r ($log, true));
         else syslog (LOG_NOTICE, $log);
     } // log
+
 } // dpObject
 ?>

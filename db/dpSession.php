@@ -96,6 +96,20 @@ class dpSession extends dpData
     } // startSession
     
     
+    public function setSerialized ($key = false, $value = false, $opt = false)
+    {
+        $value = base64_encode (serialize ($value));
+        return ($this->set ($key, $value, $opt));
+    } // setSerialized
+    
+    
+    public function getSerialized ($key = false , $opt = false)
+    {
+        $value = $this->get ($key, $opt);
+        return (base64_decode (unserialize ($value)));
+    } // getSerialized
+    
+    
     public function set ($key = false, $value = false, $opt = false)
     {
         if ((trim ($key) != false) && $this->sid)
