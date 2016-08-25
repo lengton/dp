@@ -12,19 +12,19 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
- 
+
 class dpUtilities extends dpObject
 {
     public function __construct ($config = false)
     {
         parent::__construct ($config);
     } // __construct
-    
-    
+
+
     public function copyAppUtilities ($dpBase = false, $script_dir = false, $script_name = false)
     {
         if (strlen ($dpBase) && strlen ($script_name) && strlen ($script_dir))
@@ -40,12 +40,12 @@ class dpUtilities extends dpObject
                         // Skip dir
                         if (($file == '.') || ($file == '..'))
                             continue;
-                            
+
                         if (is_file ($abpath.'/'.$file))
                         {
                             $dst_file = $script_dir.'/'.dpConstants::SCRIPT_DATADIR_BIN.'/'.$file;
                             $src_file = $abpath.'/'.$file;
-                            
+
                             // Open source and destination files
                             if (($src = fopen ($src_file, 'r')) && ($dst = fopen ($dst_file, 'w')))
                             {
@@ -66,5 +66,34 @@ class dpUtilities extends dpObject
         } // Has DP Base?
         return (false);
     } // copyAppUtilities
+
+    public function createHTAccess ($dst = false, $script_name = false)
+    {
+        if (($dst = trim ($dst)) && is_dir ($dst) && ($script_name = trim ($script_name)))
+        {
+            if ($fp = fopen ($dst.'/.htaccess', 'w+'))
+            {
+                $has_match = false;
+                while ($line = fgets ($fp))
+                {
+                    if (strpos ($line, '"^'.$script_name.'$"') !== false)
+                    {
+                        $has_match = true;
+                        break;
+                    } // Do we have an .htaccess line match?
+                } // while
+
+                if ($has_match === false)
+                {
+                    fwrite ($fp, PHP_EOL);
+                    fwrite ($fp, '<FilesMatch "^'.$script_name.'$">'.PHP_EOL);
+                    fwrite ($fp, '  ForceType application/x-httpd-php'.PHP_EOL);
+                    fwrite ($fp, '</FilesMatch>'.PHP_EOL);
+                } // No match so append to .htaccess
+
+                fclose ($fp);
+            } // open file
+        } // has destination directory
+    } // createHTAccess
 } // dpUtilities
 ?>

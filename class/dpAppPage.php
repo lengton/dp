@@ -12,28 +12,28 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
- 
+
 class dpAppPage extends dpPage
 {
     private $page_data = false;
     private $url_target_info = false;
     private $_this;
-    
+
     function __construct ($dpPageObject = false)
     {
         $_this = $dpPageObject;
-        
+
         $this->page_data = array ();
         $this->dpURL = $_this->dpURL;
         $this->session = $_this->session;
         $this->url_target_info = $_this->getInfo('page_url_target_info');
     } // __construct
-    
-    
+
+
     public function getPageData ()
     {
         return ($this->page_data);
@@ -44,14 +44,14 @@ class dpAppPage extends dpPage
     {
         if (trim ($tag) == false)
             return (false);
-            
+
         // Page data has priority
         if (!empty ($this->page_data) && isset ($this->page_data[$tag]))
             return ($this->page_data[$tag]);
         return ($this->callMethod ($tag, true, $params));
     } // getValue
-    
-    
+
+
     public function setValue ($tag = false, $value = false)
     {
         if ((trim ($tag) != false) && is_array ($this->page_data))
@@ -62,6 +62,14 @@ class dpAppPage extends dpPage
 
     public function callMethod ($tag, $string = false, $call_params = false)
     {
+        // Check if tag passed is an array
+        if (is_array ($tag) && isset ($tag['name']))
+        {
+            if (isset ($tag['params']))
+                $call_params = $tag['params'];
+            $tag = $tag['name'];  // Overrites tag
+        } // an array?
+
         $method = dpConstants::DP_PAGE_CLASS_FUNC_PREFIX.$tag;
         if (trim ($tag) != false)
         {
@@ -71,13 +79,13 @@ class dpAppPage extends dpPage
                 $params = array();
                 if (is_array ($call_params) && !empty ($call_params))
                     $params[] = $call_params;
-                    
+
                 if ($string === true)
                     ob_start();
-                
+
                 // Call page object method
                 $ret = call_user_func_array (array ($this, $method), $params);
-                
+
                 if ($string === true)
                 {
                     $out = ob_get_contents();
@@ -114,7 +122,7 @@ class dpAppPage extends dpPage
                 } // Do we have a dpURL object?
             } // Do we have the method?
         } // Has tag string?
-        return (false);    
+        return (false);
     } // callMethod
 } // dpAppPage
 ?>

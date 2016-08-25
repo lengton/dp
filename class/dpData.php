@@ -12,19 +12,19 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
- 
+
 class dpData extends dpSQL
 {
     public $table_name = false;
     public $table_def = false;
     public $table_cache = array ();
     protected $db_result = false;
-    
-    
+
+
     public function __construct ($config = false)
     {
         parent::__construct ($config);
@@ -46,17 +46,17 @@ class dpData extends dpSQL
             $this->log (__METHOD__.': No table name or definition');
             return (false);
         } // Check for table name and definition
-        
+
         $sql_method = dpConstants::SQL_METHOD_PREFIX.trim($type);
-        if ((trim ($type) !== false) && method_exists ($this, $sql_method))
+        if (dpSQL::$db && (trim ($type) !== false) && method_exists ($this, $sql_method))
         {
             return ($this->$sql_method($params));
         } // SQL method exists?
-        
+
         return (false);
     } // dpCallSQL
 
-    
+
     public function update ($kv_pair, $params = false)
     {
         $this->db_result = false;
@@ -82,8 +82,8 @@ class dpData extends dpSQL
 
         return ($this->db_result);
     } // update
-    
-    
+
+
     public function insert ($kv_pair, $params = false)
     {
         $this->db_result = false;
@@ -95,23 +95,23 @@ class dpData extends dpSQL
                 {
                     continue;
                 } // Check if this is an operator -- where not using this here anyway
-                
+
                 if (isset ($this->table_def[$key]))
                 {
                     $field_def = $this->table_def[$key];
-                    
+
                     // Skipt this field from being inserted?
                     if ((isset ($field_def['auto_increment']) && $field_def['auto_increment']) ||
                         (strtolower ($field_def['type']) == 'serial'))
                         continue;
-                } 
+                }
                 else
                 {
                     // Unset this as it doesn't exist for the table
                     unset ($kv_pair[$key]);
                 } // Has the field
             } // foreach
-            
+
             // Insert table
             $this->db_result = $this->dpCallSQL ('insert_table_row', $kv_pair);
         } // Has table definition?
@@ -134,36 +134,36 @@ class dpData extends dpSQL
                         unset ($db_params['data'][$key]);
                 } // Iterate on all key-value pair for update
             } // Do we have the 'where' clause?
-            
+
             $this->db_result = $this->dpCallSQL ('select_table_row', $db_params);
         } // Has select information?
 
         return ($this->db_result);
     } // select
-    
-    
+
+
     public function get_row ($row = 0)
     {
         if ($this->db_result)
         {
             return ($this->dpCallSQL ('fetch_row', array ('result' => $this->db_result, 'row' => $row)));
         } // has last db_result?
-        
+
         return (NULL);
     } // get_row
-    
-    
+
+
     public function get_rows ()
     {
         if ($this->db_result)
         {
             return ($this->dpCallSQL ('fetch_all_rows', $this->db_result));
         } // has last db_result?
-        
+
         return (NULL);
     } // get_rows
-    
-    
+
+
     public function delete ($kv_pair, $params = false)
     {
         $this->db_result = false;
@@ -172,8 +172,8 @@ class dpData extends dpSQL
 
         return ($this->db_result);
     } // delete
-    
-    
+
+
     /*
      *  select_helper
      *
@@ -202,14 +202,14 @@ class dpData extends dpSQL
                 {
                     continue;
                 } // Check if this is an operator
-                
+
                 if (isset ($this->table_def[$key]))
                 {
                     $field_def = $this->table_def[$key];
-                    
+
                     // Harvest 'where' fields
                     if ((isset ($field_def['index']) && $field_def['index']) ||
-                        (!empty ($params) && isset ($params['where']) && 
+                        (!empty ($params) && isset ($params['where']) &&
                             is_array($params['where']) && in_array ($key, $params['where'])))
                     {
                         $opr = '=';
@@ -217,7 +217,7 @@ class dpData extends dpSQL
                             (trim ($kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key]) !== false))
                             $opr = $kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key];
                         $where_fields[$key] = array ('opr' => $opr, 'value' => $value);
-                        
+
                         if (isset ($kv_pair[dpConstants::DP_DATA_CONJUNCTION_PREFIX.$key]) &&
                             (trim ($kv_pair[dpConstants::DP_DATA_CONJUNCTION_PREFIX.$key]) !== false))
                             $where_fields[$key]['conj'] = $kv_pair[dpConstants::DP_DATA_CONJUNCTION_PREFIX.$key];
@@ -230,12 +230,12 @@ class dpData extends dpSQL
                     unset ($kv_pair[$key]);
                 } // Has the field
             } // foreach
-            
+
             $db_params = array ('data' => $kv_pair);
             if (!empty ($where_fields))
                 $db_params['where'] = $where_fields;
         } // Has table information?
-        
+
         return ($db_params);
     } // select_helper
 

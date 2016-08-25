@@ -12,15 +12,15 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
- 
+
 class dpObject
 {
     const VERSION = '1.0';
-    
+
     private static $dp_config = false;
 
 
@@ -32,7 +32,7 @@ class dpObject
         {
             self::$dp_config = array_merge (self::$dp_config, $config);
         } // Do we have config
-        
+
         // INITIALIZATIONS
         if ($tm = $this->getConfig ('dpTimezone'))
             date_default_timezone_set ($tm);
@@ -47,7 +47,7 @@ class dpObject
             if (isset (self::$dp_config[$key]))
                 return (self::$dp_config[$key]);
             return (false);
-        } 
+        }
         return (self::$dp_config);
     } // getConfig
 
@@ -61,15 +61,15 @@ class dpObject
         }
         return (false);
     } // setConfig
-    
-    
+
+
     public function createDirs ($path = false, $file_path = false)
     {
         if (strlen ($path) && ($path[0] == '/'))
         {
             $file_name = false;
             $rpath = $path;
-            
+
             // Do we have the last element as a file?
             if ($file_path === true)
             {
@@ -99,15 +99,15 @@ class dpObject
                             else $err++;
                         } // file exists?
                     } // foreach
-                    
+
                     return ($err == 0 ? true : false);
                 } // Has dir elements?
             } // Has Raw path?
         } // Has path?
         return (false);
     } // createDirs
-    
-    
+
+
     public function log ($log = false, $expand = false)
     {
         if ($expand)

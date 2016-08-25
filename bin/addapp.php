@@ -13,7 +13,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
@@ -40,7 +40,15 @@ $script_dirs = array (
     dpConstants::SCRIPT_DATADIR_TEMPLATES
 );
 
-if ($argc > 1)
+function usage()
+{
+    global $argv;
+    
+    echo "\nUsage: $argv[0] app_name web_directory\n\n";
+    return 1;
+} // usage
+
+if ($argc > 2)
 {
     $dst = $argv[2];
     if (strlen ($dst) && file_exists ($dst) && is_dir ($dst))
@@ -55,8 +63,8 @@ if ($argc > 1)
             if (file_exists ($script))
             {
                 include_once $script;
-            }
-            
+            } // file exists?
+
             if ($fp = fopen ($script, 'w'))
             {
                 // loader.php path
@@ -71,17 +79,17 @@ if ($argc > 1)
                             {
                                 $str = "require_once '$loader_path';\n";
                             } // Require line?
-                            
+
                             if ((strpos ($str, '$config') === 0) && !empty ($config))
                             {
                                 fwrite ($fp, '$config = '.var_export ($config, true).';'.PHP_EOL);
                                 continue;
                             } // In Config line?
-                            
+
                             fwrite ($fp, $str);
                         } // foreach
                         fclose ($fp);
-                        
+
                         // CREATE NEEDED SCRIPT DIRECTORIES
                         $script_dir = $script.dpConstants::SCRIPT_DATADIR_SUFFIX;
                         if (!file_exists ($script_dir))
@@ -100,19 +108,22 @@ if ($argc > 1)
                                 } // Template dir?
                             } // Dir exists?
                         } // foreach
-                        
+
                         // ADD .htaccess DENY ON BASE SCRIPT DIRECTORY
                         if ($fp = fopen ($script_dir.'/.htaccess', 'w'))
                         {
                             fwrite ($fp, "Deny From All\n");
                             fclose ($fp);
                         } // .htaccess file
-                        
+
                         // COPY OVER NEEDED bin UTILITY SCRIPTS
                         $dpu = new dpUtilities ();
                         $dpu->copyAppUtilities ($baseDir, $script_dir, $script_name);
-                        
-                        echo "\nCreated '$script' on '$dst'.\nDon't forget to add or edit your .htaccess\n\n";
+
+                        // Create .htaccess
+                        $dpu->createHTAccess($dst, $script_name);
+
+                        echo "\nCreated '$script' on '$dst'\n\n";
                         return 0;
                     } else {
                         fclose ($fp);
@@ -122,9 +133,6 @@ if ($argc > 1)
                 }
             } // File opened?
         } // Do we have a target script file?
-    } else {
-        echo "\nUsage: $argv[0] app_name web_directory\n\n";
-        return 1;
-    } // Do we have a destination?
-} // Check for arguments
+    } else usage();
+} else usage(); // Check for arguments
 ?>

@@ -12,11 +12,11 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
- 
+
 class DP extends dpPage
 {
     function __construct ($config = false)
@@ -28,7 +28,7 @@ class DP extends dpPage
     public function start ()
     {
         // CHECK IF THIS IS RAN FROM THE WEBSERVER
-        if (!empty ($_SERVER['REMOTE_ADDR']))
+        if (php_sapi_name () != 'cli')
         {
             // Render this page
             $this->render();
