@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
@@ -22,71 +22,85 @@ class dpSession extends dpData
     public $sid = false;
     private $host_ip = false;
     private static $clientAccess = false;
-    
-    
+
+
     public $table_def = array
     (
         'sid' => array (
                     'type' => 'varchar',
-                    'length' => 128, 
-                    'null' => false, 
+                    'length' => 128,
+                    'null' => false,
                     'index' => true
                 ),
         'key' => array (
                     'type' => 'varchar',
-                    'length' => 256, 
-                    'null' => true, 
-                    'index' => true, 
+                    'length' => 256,
+                    'null' => true,
+                    'index' => true,
                     'default' => 'NULL'
                 ),
         'value' => array (
-                    'type' => 'text',
-                    'null' => true, 
+                    'type' => array (
+                        dpConstants::DB_PGSQL_IDENT => 'text',
+                        dpConstants::DB_MYSQL_IDENT => 'varchar'
+                    ),
+                    'length' => array (
+                        dpConstants::DB_PGSQL_IDENT => null,
+                        dpConstants::DB_MYSQL_IDENT => '64000'
+                    ),
+                    'null' => true,
                     'default' => 'NULL'
                 ),
         'created' => array (
                     'type' => 'timestamp',
-                    'default' => 'NOW()', 
+                    'default' => 'NOW()',
                     'null' => false
                 ),
         'modified' => array (
-                    'type' => 'timestamp',
-                    'default' => 'NOW()',
+                    'type' => array (
+                        dpConstants::DB_PGSQL_IDENT => 'timestamp',
+                        dpConstants::DB_MYSQL_IDENT => 'datetime'
+                    ),
                     'null' => true
                 )
     );
-    
-  
+
+
     public function __construct ($config = false)
     {
-        parent::__construct ($config);
         $this->table_name = __CLASS__;
+        parent::__construct ($config);
 
-        self::$clientAccess = new dpClientAccess ();
-        $this->startSession ();
+        if (php_sapi_name () != 'cli')
+        {
+            self::$clientAccess = new dpClientAccess ($config);
+            if (self::$clientAccess->tableExists () === false)
+                self::$clientAccess = false;
+            $this->startSession ();
+        } // Sessions are only for web enabled apps
     } // __construct
-    
-    
+
+
     public function startSession ()
     {
         // Get Remote Address
         $this->host_ip = @$_SERVER['REMOTE_ADDR'];
-        
+
         // SET SESSION COOKIE
         if (isset ($_COOKIE['dpSID']))
             $this->sid = $_COOKIE['dpSID'];
-        else 
+        else
         {
             // Build session ID
             $this->sid = md5 (uniqid (mt_rand (), true)).md5 (uniqid (mt_rand (), true));
             setcookie ('dpSID', $this->sid, 0, '/');
-            
+
             // COLLECT INFO
             if ($this->host_ip && self::$clientAccess)
             {
                 // Update client access information
                 $kv_pair = array (
-                    'host_ip' => $this->host_ip, 
+                    'host_ip' => $this->host_ip,
                     'browser' => @$_SERVER['HTTP_USER_AGENT'],
                     'modified' => 'NOW()'
                 );
@@ -94,22 +108,22 @@ class dpSession extends dpData
             } // SAVE BROWSER INFO
         } // SET SESSION KEY
     } // startSession
-    
-    
+
+
     public function setSerialized ($key = false, $value = false, $opt = false)
     {
         $value = base64_encode (serialize ($value));
         return ($this->set ($key, $value, $opt));
     } // setSerialized
-    
-    
+
+
     public function getSerialized ($key = false , $opt = false)
     {
         $value = $this->get ($key, $opt);
         return (base64_decode (unserialize ($value)));
     } // getSerialized
-    
-    
+
+
     public function set ($key = false, $value = false, $opt = false)
     {
         if ((trim ($key) != false) && $this->sid)
@@ -117,13 +131,13 @@ class dpSession extends dpData
             $opts = array (dpConstants::DB_UPDATE_OR_INSERT => true);
             if (is_array ($opt) && !empty ($opt))
                 $opts = $opt;
-            return ($this->update (array ('sid' => $this->sid, 'key' => $key, 'value' => $value, 'modified' => 'NOW()'), $opts));
+            return ($this->update (array ('sid' => $this->sid, 'key' => $key, 'value' => $value, 'modified' => date ('c')), $opts));
         } // Do we have a key?
 
-        return (false);        
+        return (false);
     } // set
-    
-    
+
+
     public function get ($key = false, $opt = false)
     {
         if ((trim ($key) != false) && $this->sid)
@@ -135,7 +149,7 @@ class dpSession extends dpData
             } // Has result?
         } // Do we have a key?
 
-        return (false);        
+        return (false);
     } // get
 
 
@@ -148,7 +162,7 @@ class dpSession extends dpData
                 $kv_pair['key'] = $key;
             return ($this->delete ($kv_pair));
         } // Do we have an SID?
-        
+
         return (false);
     } // clear
 } // dpSession

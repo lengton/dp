@@ -43,9 +43,10 @@ class dpURL extends dpObject
     public function parseURL($url = false)
     {
         // Determine which URL to use
+        $rawURL = false;
         if (strlen ($url))
             $rawURL = trim ($url);
-        else {
+        else if (isset ($_SERVER['REQUEST_URI'])){
             $rawURL = trim ($_SERVER['REQUEST_URI']);
             $this->request_uri = $rawURL;
         } // Which URL string?

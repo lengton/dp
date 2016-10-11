@@ -19,14 +19,12 @@
 
 class dpPage extends dpData
 {
-    private $sid = false;
-    private $host_ip = false;
-
     protected $dpURL = false;
     private static $dpTag = false;
     private static $dpTagLen = 0;
     private $template_data = false;
     private $page_object = false;
+    private $config = false;
 
     private static $register_autoload = false;
     private static $autoload_path = false;
@@ -35,6 +33,7 @@ class dpPage extends dpData
 
     function __construct ($config = false, $url = false)
     {
+        $this->config = $config;
         parent::__construct ($config);
 
         // Create URL object
@@ -163,7 +162,7 @@ class dpPage extends dpData
     public function startSession ()
     {
         if ($this->session === false)
-            $this->session = new dpSession ();
+            $this->session = new dpSession ($this->config);
     } // startSession
 
 

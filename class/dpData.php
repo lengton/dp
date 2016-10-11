@@ -17,18 +17,14 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-class dpData extends dpSQL
+class dpData extends dpDatabase
 {
     public $table_name = false;
     public $table_def = false;
-    public $table_cache = array ();
-    protected $db_result = false;
-
 
     public function __construct ($config = false)
     {
         parent::__construct ($config);
-        $this->table_name = __CLASS__;
     } // __construct
 
 
@@ -39,7 +35,7 @@ class dpData extends dpSQL
     } // createTable
 
 
-    public function dpCallSQL ($type = false, $params = false)
+    public function dpCallSQL ($sql_function = false, $params = false)
     {
         if (empty ($this->table_def) || (trim ($this->table_name) == false))
         {
@@ -47,11 +43,9 @@ class dpData extends dpSQL
             return (false);
         } // Check for table name and definition
 
-        $sql_method = dpConstants::SQL_METHOD_PREFIX.trim($type);
-        if (dpSQL::$db && (trim ($type) !== false) && method_exists ($this, $sql_method))
-        {
-            return ($this->$sql_method($params));
-        } // SQL method exists?
+        $sql_method = dpConstants::DB_METHOD_PREFIX.trim ($sql_function);
+        if (self::$pdo_db && (trim ($sql_method) !== false) && method_exists ($this, $sql_method))
+            return ($this->$sql_method ($params));
 
         return (false);
     } // dpCallSQL
@@ -59,7 +53,6 @@ class dpData extends dpSQL
 
     public function update ($kv_pair, $params = false)
     {
-        $this->db_result = false;
         if ($db_params = $this->select_helper ($kv_pair, $params))
         {
             $cleaned_kv_pair = $db_params['data'];
@@ -72,29 +65,28 @@ class dpData extends dpSQL
                         unset ($db_params['data'][$key]);
                 } // Iterate on all key-value pair for update
             } // Do we have the 'where' clause?
-            $this->db_result = $this->dpCallSQL ('update_table_row', $db_params);
-            if ($this->db_result && ($this->dpCallSQL ('affected_rows', $this->db_result) == 0))
+
+            $res = $this->dpCallSQL ('update_table_row', $db_params);
+            if (($res === false) || ($this->dpCallSQL ('affected_rows', $this->db_result) == 0))
             {
                 if (!empty ($params) && isset ($params[dpConstants::DB_UPDATE_OR_INSERT]))
-                    $this->db_result = $this->dpCallSQL ('insert_table_row', $cleaned_kv_pair);
+                    $res = $this->dpCallSQL ('insert_table_row', $cleaned_kv_pair);
             } // Do we need to insert on zero affected rows?
+            return ($res);
         } // Has select information??
 
-        return ($this->db_result);
+        return (false);
     } // update
 
 
     public function insert ($kv_pair, $params = false)
     {
-        $this->db_result = false;
         if ($this->table_def && is_array ($kv_pair) && !empty ($kv_pair))
         {
             foreach ($kv_pair as $key => $value)
             {
                 if (strpos ($key, dpConstants::DP_DATA_OPERATOR_PREFIX) !== false)
-                {
                     continue;
-                } // Check if this is an operator -- where not using this here anyway
 
                 if (isset ($this->table_def[$key]))
                 {
@@ -104,25 +96,19 @@ class dpData extends dpSQL
                     if ((isset ($field_def['auto_increment']) && $field_def['auto_increment']) ||
                         (strtolower ($field_def['type']) == 'serial'))
                         continue;
-                }
-                else
-                {
-                    // Unset this as it doesn't exist for the table
-                    unset ($kv_pair[$key]);
-                } // Has the field
+                } else unset ($kv_pair[$key]);
             } // foreach
 
             // Insert table
-            $this->db_result = $this->dpCallSQL ('insert_table_row', $kv_pair);
+            return ($this->dpCallSQL ('insert_table_row', $kv_pair));
         } // Has table definition?
 
-        return ($this->db_result);
+        return (false);
     } // insert
 
 
     public function select ($kv_pair, $params = false)
     {
-        $this->db_result = false;
         if ($db_params = $this->select_helper ($kv_pair, $params))
         {
             if (isset ($db_params['where']) && !empty ($db_params['where']))
@@ -135,32 +121,22 @@ class dpData extends dpSQL
                 } // Iterate on all key-value pair for update
             } // Do we have the 'where' clause?
 
-            $this->db_result = $this->dpCallSQL ('select_table_row', $db_params);
+            return ($this->dpCallSQL ('select_table_row', $db_params));
         } // Has select information?
 
-        return ($this->db_result);
+        return (false);
     } // select
 
 
     public function get_row ($row = 0)
     {
-        if ($this->db_result)
-        {
-            return ($this->dpCallSQL ('fetch_row', array ('result' => $this->db_result, 'row' => $row)));
-        } // has last db_result?
-
-        return (NULL);
+        return ($this->dpCallSQL ('fetch_row'));
     } // get_row
 
 
     public function get_rows ()
     {
-        if ($this->db_result)
-        {
-            return ($this->dpCallSQL ('fetch_all_rows', $this->db_result));
-        } // has last db_result?
-
-        return (NULL);
+        return ($this->dpCallSQL ('fetch_all_rows'));
     } // get_rows
 
 
@@ -172,6 +148,12 @@ class dpData extends dpSQL
 
         return ($this->db_result);
     } // delete
+
+
+    public function tableExists ()
+    {
+        return ($this->dpCallSQL ('table_exists'));
+    } // tableExists
 
 
     /*

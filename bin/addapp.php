@@ -35,6 +35,7 @@ $script_dirs = array (
     dpConstants::SCRIPT_DATADIR_BIN,
     dpConstants::SCRIPT_DATADIR_CACHE,
     dpConstants::SCRIPT_DATADIR_CLASS,
+    dpConstants::SCRIPT_DATADIR_DB,
     dpConstants::SCRIPT_DATADIR_LOG,
     dpConstants::SCRIPT_DATADIR_PAGES,
     dpConstants::SCRIPT_DATADIR_TEMPLATES
@@ -43,7 +44,7 @@ $script_dirs = array (
 function usage()
 {
     global $argv;
-    
+
     echo "\nUsage: $argv[0] app_name web_directory\n\n";
     return 1;
 } // usage

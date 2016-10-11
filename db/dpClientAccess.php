@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
@@ -23,19 +23,19 @@ class dpClientAccess extends dpData
     (
         'host_ip' => array (
                     'type' => 'varchar',
-                    'length' => 40, 
-                    'null' => false, 
+                    'length' => 40,
+                    'null' => false,
                     'index' => true
                 ),
         'browser' => array (
                     'type' => 'varchar',
-                    'length' => 512, 
-                    'null' => true, 
+                    'length' => 512,
+                    'null' => true,
                     'default' => 'NULL'
                 ),
         'created' => array (
                     'type' => 'timestamp',
-                    'default' => 'NOW()', 
+                    'default' => 'NOW()',
                     'null' => false
                 ),
         'modified' => array (
@@ -44,13 +44,13 @@ class dpClientAccess extends dpData
                     'null' => true
                 )
     );
-    
-  
+
+
     public function __construct ($config = false)
     {
-        parent::__construct ($config);
         $this->table_name = __CLASS__;
+        parent::__construct ($config);
     } // __construct
-    
+
 } // dpClientAccess
 ?>
