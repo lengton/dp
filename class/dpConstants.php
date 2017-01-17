@@ -1,7 +1,7 @@
 <?php
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

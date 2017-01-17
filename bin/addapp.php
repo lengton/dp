@@ -2,7 +2,7 @@
 <?php
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,13 +51,12 @@ function usage()
 
 if ($argc > 2)
 {
-    $dst = $argv[2];
+    $dst = realpath ($argv[2]);
     if (strlen ($dst) && file_exists ($dst) && is_dir ($dst))
     {
         $script_name = $argv[1];
         if (strlen ($script_name) && (strpos ($script_name, '/') === false))
         {
-            $dst = rtrim ($dst, '/');
             $script = $dst.'/'.$script_name;
 
             // Check if there's an existing script already
@@ -71,13 +70,20 @@ if ($argc > 2)
                 // loader.php path
                 if (($bpos = strpos (__DIR__, '/bin')) !== false)
                 {
-                    $loader_path = substr (__DIR__, 0, $bpos).'/loader.php';
+                    $dp_path = substr (__DIR__, 0, $bpos);
+                    $loader_path = $dp_path.'/loader.php';
                     if (file_exists ($loader_path))
                     {
                         foreach ($script_template as $str)
                         {
                             if (strpos ($str, 'require') !== false)
                             {
+                                // Determine if DP installation is within the same directory
+                                // If so, we use 'relative' path loading
+                                echo 'dp_path='.$dp_path.' dst='.$dst;
+                                /*if (strpos ($dp_path, $dst) == 0)
+                                    $str = 'require_once '
+                                */
                                 $str = "require_once '$loader_path';\n";
                             } // Require line?
 
@@ -134,6 +140,7 @@ if ($argc > 2)
                 }
             } // File opened?
         } // Do we have a target script file?
-    } else usage();
-} else usage(); // Check for arguments
+    } // Script name
+} // Have enough arguments
+usage(); // Check for arguments
 ?>

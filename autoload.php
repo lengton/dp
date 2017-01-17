@@ -1,7 +1,7 @@
 <?php
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,16 +12,16 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
 // dp Class loader
-spl_autoload_register (function ($class) 
+spl_autoload_register (function ($class)
 {
     $baseDir = __DIR__;
-    
+
     $file = rtrim ($baseDir, '/').'/class/'.str_replace('\\', '/', ltrim ($class, "/\t\r\r\0\x0B ")).'.php';
     if (file_exists ($file))
     {
@@ -33,11 +33,10 @@ spl_autoload_register (function ($class)
 spl_autoload_register (function ($class)
 {
     $baseDir = __DIR__;
-    
+
     $file = rtrim ($baseDir, '/').'/db/'.str_replace('\\', '/', ltrim ($class, "/\t\r\r\0\x0B ")).'.php';
     if (file_exists ($file))
     {
         require_once $file;
     } // dp DB Classes
 });
-                            

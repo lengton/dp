@@ -58,7 +58,14 @@ class dpDatabase extends dpObject
 
         $sql_statements = array ();
         if ($params && isset ($params['drop_table']))
-            $sql_statements[] = 'DROP TABLE IF EXISTS '.$this->sqlEsc ($this->table_name).' CASCADE';
+        {
+            $sql_drop = 'DROP TABLE IF EXISTS ';
+            if (self::$pdo_driver == dpConstants::DB_MYSQL_IDENT)
+                $sql_drop .= '`'.$this->table_name.'`';
+            else $sql_drop .= $this->sqlEsc ($this->table_name);
+            $sql_drop .= ' CASCADE';
+            $sql_statements[] = $sql_drop;
+        } // drop table?
 
         $index_fields = array ();
         $columns = array ();
@@ -83,9 +90,6 @@ class dpDatabase extends dpObject
                         $colstr .= ' '.$field_type;
                 } // has type?
 
-                if (isset ($def['unique']))
-                    $colstr .= ' UNIQUE';
-
                 if (isset ($def['length']))
                 {
                     $field_length = false;
@@ -103,6 +107,9 @@ class dpDatabase extends dpObject
 
                 if (isset ($def['default']))
                     $colstr .= ' DEFAULT '.$def['default'];
+
+                if (isset ($def['unique']))
+                    $colstr .= ' UNIQUE';
 
                 if (isset ($def['index']))
                     $index_fields[] = $col;
@@ -170,6 +177,8 @@ class dpDatabase extends dpObject
 
             list ($where_clause, $where_values) = $this->build_where_clause ($params['where']);
             $sql = 'SELECT '.$select_clause.' FROM '.$this->table_name.$where_clause;
+            if (isset ($params['limit']))
+                $sql .= ' '.$params['limit'];
             return ($this->dpDB_query_params ($sql, $where_values));
         } // has params?
 
@@ -302,11 +311,22 @@ class dpDatabase extends dpObject
                 $this->pdo_statement = NULL;
             } // Close existing statement, if any
 
+            $errors = array ();
             foreach ($sql_list as $sql_statement)
             {
-                if ($this->pdo_statement = self::$pdo_db->query ($sql_statement))
-                    $query_results[] = $this->pdo_statement->fetchAll ();
+                $this->pdo_statement = self::$pdo_db->query ($sql_statement);
+                if ($this->pdo_statement === false)
+                {
+                    // Query errors?
+                    $errors[] = $sql_statement;
+                } else $query_results[] = $this->pdo_statement->fetchAll ();
             } // foreach
+
+            if (!empty ($errors))
+            {
+                foreach ($errors as $sql)
+                    error_log (__CLASS__.': '.$sql);
+            } // Do we have errors?
 
             if (count ($query_results) == 1)
                 return ($query_results[0]);

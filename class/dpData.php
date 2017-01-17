@@ -181,9 +181,7 @@ class dpData extends dpDatabase
             foreach ($kv_pair as $key => $value)
             {
                 if (strpos ($key, dpConstants::DP_DATA_OPERATOR_PREFIX) !== false)
-                {
                     continue;
-                } // Check if this is an operator
 
                 if (isset ($this->table_def[$key]))
                 {
@@ -216,6 +214,8 @@ class dpData extends dpDatabase
             $db_params = array ('data' => $kv_pair);
             if (!empty ($where_fields))
                 $db_params['where'] = $where_fields;
+            if (isset ($params['limit']))
+                $db_params['limit'] = $params['limit'];
         } // Has table information?
 
         return ($db_params);

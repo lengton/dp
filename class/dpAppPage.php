@@ -31,6 +31,9 @@ class dpAppPage extends dpPage
         $this->dpURL = $_this->dpURL;
         $this->session = $_this->session;
         $this->url_target_info = $_this->getInfo('page_url_target_info');
+
+        // Initialize page_data container
+        $this->page_data['appname'] = $this->getConfig ('dpScriptName');
     } // __construct
 
 

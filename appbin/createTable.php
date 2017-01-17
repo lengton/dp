@@ -3,7 +3,7 @@
 $app_name = '';
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ $app_name = '';
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-if (strlen ($app_name) < 1) 
+if (strlen ($app_name) < 1)
 {
     echo 'App name missing';
     exit (1);
@@ -31,7 +31,7 @@ include_once ($app_path);
 // Setup dpAppBase
 $dp->setConfig ('dpAppBase', $app_path.dpConstants::SCRIPT_DATADIR_SUFFIX);
 
-// Register App level class autoloading 
+// Register App level class autoloading
 $dpPage = new dpPage ($config);
 $dpPage->register_autoload ();
 
@@ -43,7 +43,7 @@ if ($argc == 2)
         {
             $obj->createTable ();
             echo 'Table "'.$obj->table_name.'" created.'.PHP_EOL;
-        } else throw new Exception ('Not a derived class of dpData'); 
+        } else throw new Exception ('Not a derived class of dpData');
     } catch (Exception $e) {
         echo 'DB Error: '.$e->getMessage().PHP_EOL;
     }

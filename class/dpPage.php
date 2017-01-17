@@ -351,7 +351,7 @@ class dpPage extends dpData
                         } // while
                     } else {
                         if ($i == 0)
-                            $static_text .= $line;
+                            $static_text .= $line.PHP_EOL;
                         else $static_text .= substr ($line, $i);
                     } // Do we have dp tags?
                 } // while
@@ -508,7 +508,7 @@ class dpPage extends dpData
                                             switch ($ptag)
                                             {
                                                 case 'text' :
-                                                    fwrite ($fp, 'echo "'.addslashes ($pdata).'";'.PHP_EOL);
+                                                    fwrite ($fp, 'echo "'.str_replace ('"', '\"', $pdata).'";'.PHP_EOL);
                                                     break;
 
                                                 case 'tag' :

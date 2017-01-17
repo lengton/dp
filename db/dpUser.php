@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
@@ -26,7 +26,7 @@ class dpUser extends dpSessionEnabled
     (
         'uid' => array (
                     'type' => 'serial',
-                    'null' => false, 
+                    'null' => false,
                     'index' => true,
                     'unique' => true
                 ),
@@ -51,57 +51,61 @@ class dpUser extends dpSessionEnabled
         'last_name' => array (
                     'type' => 'varchar',
                     'length' => 96,
-                ),                
+                ),
         'middle_name' => array (
                     'type' => 'varchar',
                     'length' => 96,
-                ),                
+                ),
         'active' => array (
                     'type' => 'boolean',
                     'deafult' => 'true'
                 ),
         'last_login' => array (
-                    'type' =>'timestamp',
+                    'type' => array (
+                        dpConstants::DB_PGSQL_IDENT => 'timestamp',
+                        dpConstants::DB_MYSQL_IDENT => 'datetime'
+                    )
                 ),
         'created' => array (
                     'type' => 'timestamp',
-                    'default' => 'NOW()', 
+                    'default' => 'NOW()',
                     'null' => false
                 ),
         'modified' => array (
-                    'type' => 'timestamp',
-                    'default' => 'NOW()',
+                    'type' => array (
+                        dpConstants::DB_PGSQL_IDENT => 'timestamp',
+                        dpConstants::DB_MYSQL_IDENT => 'datetime'
+                    ),
                     'null' => true
                 )
     );
-    
-  
+
+
     public function __construct ($obj_param = false)
     {
-        $this->table_name = __CLASS__;
-        
         // Important!!! dpSessionEnabed objects should pass its db_field key to the parent constructor.
         // This associates the object's primary key field with the current session
         parent::__construct ($obj_param, 'uid');
+        $this->table_name = __CLASS__;
     } // __construct
-    
-    
+
+
     public function verify_password ($password = false, $hash = false)
     {
         if ($hash)
             return (password_verify ($password, $hash));
-        
+
         return (false);
     } // verify_password
-    
-    
+
+
     public function hash_password ($password = false)
     {
         if (($pass = trim ($password)) !== false)
             return (password_hash ($pass, PASSWORD_DEFAULT));
-        
+
         return (false);
     } // hash_password
-    
+
 } // dpUser
 ?>

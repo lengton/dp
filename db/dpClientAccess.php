@@ -48,8 +48,8 @@ class dpClientAccess extends dpData
 
     public function __construct ($config = false)
     {
-        $this->table_name = __CLASS__;
         parent::__construct ($config);
+        $this->table_name = __CLASS__;
     } // __construct
 
 } // dpClientAccess
