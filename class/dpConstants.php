@@ -25,7 +25,6 @@ class dpConstants
 
     const URL_TRIM_STR = "/\t\r\r\0\x0B ";
 
-    const PHP_COMMANDLINE_PATH = '/usr/local/bin/php';
     const PHP_TAG_START = '<?php';
     const PHP_TAG_END = '?>';
 

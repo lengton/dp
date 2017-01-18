@@ -22,13 +22,13 @@ require $baseDir.'/autoload.php';
 
 $config = false;
 $script_template = array (
-    "<?php\n",
-    "// dp Web Framework app script\n",
-    "require",
-    "\$config = array ();\n\n",
-    "\$dp = new DP(\$config);\n",
-    "\$dp->start();\n",
-    "?>\n"
+    '<?php'.PHP_EOL,
+    ':header',
+    ':require',
+    ':config',
+    '$dp = new DP($config);'.PHP_EOL,
+    '$dp->start();'.PHP_EOL,
+    '?>'.PHP_EOL
 );
 
 $script_dirs = array (
@@ -74,24 +74,68 @@ if ($argc > 2)
                     $loader_path = $dp_path.'/loader.php';
                     if (file_exists ($loader_path))
                     {
+                        // For every line in our template
+                        $same_app_dp_path = false;
                         foreach ($script_template as $str)
                         {
-                            if (strpos ($str, 'require') !== false)
+                            if ($str[0] == ':')
                             {
-                                // Determine if DP installation is within the same directory
-                                // If so, we use 'relative' path loading
-                                echo 'dp_path='.$dp_path.' dst='.$dst;
-                                /*if (strpos ($dp_path, $dst) == 0)
-                                    $str = 'require_once '
-                                */
-                                $str = "require_once '$loader_path';\n";
-                            } // Require line?
+                                switch (substr ($str, 1))
+                                {
+                                    case 'header' :
+                                        $str = '// DP Web Framework App Script'.PHP_EOL;
+                                        break;
 
-                            if ((strpos ($str, '$config') === 0) && !empty ($config))
-                            {
-                                fwrite ($fp, '$config = '.var_export ($config, true).';'.PHP_EOL);
-                                continue;
-                            } // In Config line?
+                                    case 'require' :
+                                        // Determine if DP installation is within the same directory
+                                        // If so, we use 'relative' path loading
+                                        if (($bp_pos = strpos ($dp_path, dpConstants::DP_DIR)) !== false)
+                                        {
+                                            if (substr ($dp_path, 0, $bp_pos) == $dst)
+                                            {
+                                                $loader_path = '__DIR__.\''.dpConstants::DP_DIR.'/loader.php';
+                                                $same_app_dp_path = true;
+                                            } // DP and App path is the same
+                                        } // check DP path
+                                        $str = 'require_once '.($same_app_dp_path ? '' : '\'').$loader_path.'\';'.PHP_EOL;
+                                        break;
+
+                                    case 'config' :
+                                        if (!isset ($config))
+                                            $config = array ();
+
+                                        // Needed default config values
+                                        if (!isset ($config['php_commandline_path']))
+                                        {
+                                            $cmd_path = exec ('which php');
+                                            if (trim ($cmd_path))
+                                                $config['php_commandline_path'] = $cmd_path;
+                                        } // Get PHP command line path
+
+                                        // Do automatic config value modification, if needed
+                                        fwrite ($fp, '$config = array ('.PHP_EOL);
+                                        foreach ($config as $key => $value)
+                                        {
+                                            $raw_string = false;
+
+                                            // Check if value is a match for DP parent path
+                                            if ((gettype ($value) == 'string') &&
+                                                (strpos ($value, ($ppath = dirname ($dp_path))) === 0) &&
+                                                ($same_app_dp_path == true))
+                                            {
+                                                $raw_string = '__DIR__.\''.substr ($value, strlen ($ppath)).'\'';
+                                            } // convert paths
+
+                                            fwrite ($fp, '  \''.$key.'\' => ');
+                                            if ($raw_string)
+                                                fwrite ($fp, $raw_string);
+                                            else fwrite ($fp, var_export ($value, true));
+                                            fwrite ($fp, ','.PHP_EOL);
+                                        } // foreach
+                                        fwrite ($fp, ');'.PHP_EOL);
+                                        continue 2;
+                                } // switch
+                            } // special key string?
 
                             fwrite ($fp, $str);
                         } // foreach

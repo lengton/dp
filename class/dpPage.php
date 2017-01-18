@@ -440,10 +440,11 @@ class dpPage extends dpData
 
     protected function checkSyntax ($php_path = false)
     {
-        if ($php_path && file_exists (dpConstants::PHP_COMMANDLINE_PATH))
+        $php_commandline_path = $this->getConfig ('php_commandline_path');
+        if ($php_path && $php_commandline_path && file_exists ($php_commandline_path))
         {
             $output = array();
-            $exec_str = dpConstants::PHP_COMMANDLINE_PATH.' -l '.$php_path;
+            $exec_str = $php_commandline_path.' -l '.$php_path;
             @exec ($exec_str, $output, $res);
             if ($res)
                 $this->log ('Syntax Error: '.$this->getInfo ('page_fullpath'));
