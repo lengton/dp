@@ -26,8 +26,7 @@ class dpPage extends dpData
     private $page_object = false;
     private $config = false;
 
-    private static $register_autoload = false;
-    private static $autoload_path = false;
+    private static $dp_classpath_cache = false;
     public $session = false;
 
 
@@ -42,77 +41,76 @@ class dpPage extends dpData
         // Initializations
         self::$dpTag = '<'.dpConstants::DP_TAG.':';
         self::$dpTagLen = strlen (self::$dpTag);
-        self::$autoload_path = array ();
     } // __construct
+
+
+    public function dpPageClassLoader ($class, $class_path = false)
+    {
+        if ($class_path == false)
+            $class_path = $this->getConfig ('dpAppBase').'/'.dpConstants::SCRIPT_DATADIR_CLASS.'/';
+
+        if ($tclass = trim ($class))
+        {
+            // Has this class been cached?
+            if (self::$dp_classpath_cache && isset (self::$dp_classpath_cache[$tclass]))
+            {
+                require_once self::$dp_classpath_cache[$tclass][$tclass];
+                return true;
+            } // cached class?
+
+            $class_file = $class_path.$tclass.'.php';
+            if (file_exists ($class_file))
+            {
+                self::$dp_classpath_cache[$tclass] = $class_file;
+                require_once $class_file;
+                return true;
+            }
+            else
+            {
+                // Scan all possible class files
+                if ($dir_items = scandir ($class_path))
+                {
+                    foreach ($dir_items as $dir_entry)
+                    {
+                        if (($dir_entry == '.') || ($dir_entry == '..') || !is_dir ($class_path.$dir_entry))
+                            continue;
+
+                        $this->dpPageClassLoader ($class, $class_path.$dir_entry.'/');
+                    } // foreach
+                } // has directory entries
+            } // Require dp Classes
+        } // has class name?
+
+        return false;
+    } // dpPageClassLoader
 
 
     public function register_autoload ()
     {
         // REGISTER APP CLASSES AUTOLOAD FUNCTION
-        spl_autoload_register (function ($class)
-        {
-            if (self::$register_autoload === false)
-            {
-                self::$register_autoload = array();
-            } // Initialize app dir cache
-
-            // First level
-            $class = str_replace ('\\', '/', ltrim ($class, "/\t\r\r\0\x0B "));
-            $class_path =  sprintf ("%s/%s/", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CLASS);
-
-            if (file_exists ($class_file = $class_path.$class.dpConstants::DP_PHP_EXTENSION))
-            {
-                require_once $class_file;
-            } else {
-                // Go through one more level under this dir
-                if (empty (self::$register_autoload))
-                {
-                    $files = scandir ($class_path);
-                    foreach ($files as $file)
-                    {
-                        if (is_dir ($class_path.$file))
-                        {
-                            self::$register_autoload[] = $class_path.$file.'/';
-                        }
-                    }
-                } // Cache second level directories
-
-                if (!empty (self::$autoload_path) && file_exists (self::$autoload_path[$class]))
-                {
-                    require_once self::$autoload_path[$class];
-                } else {
-                    // Search and cache include path
-                    foreach (self::$register_autoload as $path)
-                    {
-                        if (file_exists ($class_file = $path.$class.dpConstants::DP_PHP_EXTENSION))
-                        {
-                            self::$autoload_path[$class] = $path.$class.dpConstants::DP_PHP_EXTENSION;
-                            require_once $class_file;
-                        }
-                    } // foreach
-                } // Is the path cached?
-            } // dp App Classes
-        }); // spl_autoload_register
+        self::$dp_classpath_cache = array ();
+        spl_autoload_register (array ($this, 'dpPageClassLoader'));
     } // register_autoload
 
 
     public function render ()
     {
         $out = '';
+        $url_target_info = false;
         $render_start_time = microtime(true);
 
         // Render only if URL is valid
         if ($this->dpURL && ($this->dpURL->valid === true))
         {
             // REGISTER APP AUTOLOAD FUNCTION
-            if (self::$register_autoload === false)
+            if (self::$dp_classpath_cache === false)
                 $this->register_autoload ();
 
             // Get the URL file target (always a file not a directory)
             $url_target_info = $this->getInfo ('page_url_target_info');
 
             // Start Page Session
-            $this->startSession();
+            $this->startSession ();
 
             // Load page elements, if any
             if (!empty ($url_target_info) && ($this->page_object = $this->loadPage (array ('url_target_info' => $url_target_info))))
@@ -154,7 +152,8 @@ class dpPage extends dpData
         } // URL valid?
 
         // Display render output
-        $this->log (sprintf ('Page[%s] rendered in %.6fus', $this->getConfig('dpScriptName'), (microtime(true) - $render_start_time)));
+        $log_out = $this->getConfig ('dpScriptName').(($url_target_info && isset ($url_target_info['name'])) ? ': '.$url_target_info['name'] : '');
+        $this->log (sprintf ('Page [%s] rendered in %.6fs', $log_out, (microtime(true) - $render_start_time)));
         echo $out;
     } // render
 
@@ -174,19 +173,19 @@ class dpPage extends dpData
             switch ($key)
             {
                 case 'cache_template_path' :
-                    $val = sprintf ("%s/%s/%s/", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CACHE, dpConstants::SCRIPT_DATADIR_TEMPLATES);
+                    $val = implode  ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CACHE, dpConstants::SCRIPT_DATADIR_TEMPLATES)).'/';
                     break;
 
                 case 'template_path' :
-                    $val = sprintf ("%s/%s/", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_TEMPLATES);
+                    $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_TEMPLATES)).'/';
                     break;
 
                 case 'cache_page_path' :
-                    $val = sprintf ("%s/%s/%s/", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CACHE, dpConstants::SCRIPT_DATADIR_PAGES);
+                    $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CACHE, dpConstants::SCRIPT_DATADIR_PAGES)).'/';
                     break;
 
                 case 'page_path' :
-                    $val = sprintf ("%s/%s/", $this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_PAGES);
+                    $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_PAGES)).'/';
                     break;
 
                 case 'page_url_path' :
@@ -234,6 +233,7 @@ class dpPage extends dpData
         // If trigger clear cache
         if ($this->getConfig ('dpClearStatCache') === true)
             clearstatcache();
+
         if ($exists_ct && $exists_tp && (filemtime ($tp_file) > filemtime ($cached_tp)))
         {
             $this->log ('Cache clear: '.$tp_name);
@@ -244,11 +244,11 @@ class dpPage extends dpData
         // Do we have an existing cached template?
         if ($exists_ct === false)
         {
-            if ($this->createDirs ($cached_tp, $file_path = true) === false)
+            if ($this->createDirectories ($cached_tp, $file_path = true) === false)
                 return (false);
 
             // Read and process template
-            $this->template_data = $this->parseTemplate($tp_name, $is_file = true);
+            $this->template_data = $this->parseTemplate ($tp_name, $is_file = true);
             if ($fp = fopen ($cached_tp, 'w'))
             {
                 fwrite ($fp, serialize ($this->template_data));
@@ -403,7 +403,7 @@ class dpPage extends dpData
         // Do we have an existing cached page class?
         if ($exists_pt === false)
         {
-            if ($this->createDirs ($cached_pg, $file_path = true) === false)
+            if ($this->createDirectories ($cached_pg, $file_path = true) === false)
                 return (false);
 
             // Read/process and write page data

@@ -63,7 +63,7 @@ class dpObject
     } // setConfig
 
 
-    public function createDirs ($path = false, $file_path = false)
+    public function createDirectories ($path = false, $file_path = false)
     {
         if (strlen ($path) && ($path[0] == '/'))
         {
@@ -105,14 +105,12 @@ class dpObject
             } // Has Raw path?
         } // Has path?
         return (false);
-    } // createDirs
+    } // createDirectories
 
 
-    public function log ($log = false, $expand = false)
+    public function log ($log = false)
     {
-        if ($expand)
-            syslog (LOG_NOTICE, print_r ($log, true));
-        else syslog (LOG_NOTICE, $log);
+        syslog (LOG_NOTICE, $log);
     } // log
 
 } // dpObject
