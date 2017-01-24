@@ -125,6 +125,14 @@ class dpPage extends dpData
 
             // Get the URL file target (always a file not a directory)
             $url_target_info = $this->getInfo ('page_url_target_info');
+            if (!$url_target_info && ($default_page = $this->getConfig ('default_page')))
+            {
+                $redirect_path = $default_page;
+                if ($default_page[0] != '/')
+                    $redirect_path = '/'.$this->getConfig ('dpScriptName').'/'.$default_page;
+                header ('Location: '.$redirect_path);
+                exit (0);
+            } // No target information?
 
             // Start Page Session
             $this->startSession ();
