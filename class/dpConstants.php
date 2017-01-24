@@ -51,6 +51,7 @@ class dpConstants
     const SCRIPT_DATADIR_TEMPLATES = 'templates';
     const SCRIPT_DATADIR_CACHE = 'cache';
     const SCRIPT_DATADIR_CLASS = 'class';
+    const SCRIPT_DATADIR_TEMP = 'tmp';
     const SCRIPT_DATADIR_DB = 'db';
     const SCRIPT_DATADIR_BIN = 'bin';
     const SCRIPT_DATADIR_LOG = 'log';

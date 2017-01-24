@@ -207,6 +207,10 @@ class dpPage extends dpData
                     $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_TEMPLATES)).'/';
                     break;
 
+                case 'temp_path' :
+                    $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_TEMP)).'/';
+                    break;
+
                 case 'cache_page_path' :
                     $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CACHE, dpConstants::SCRIPT_DATADIR_PAGES)).'/';
                     break;

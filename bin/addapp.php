@@ -18,7 +18,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 $baseDir = substr (__DIR__, 0, strpos (__DIR__, '/bin'));
-require $baseDir.'/autoload.php';
+require $baseDir.'/loader.php';
 
 $config = false;
 $script_template = array (
@@ -38,7 +38,8 @@ $script_dirs = array (
     dpConstants::SCRIPT_DATADIR_DB,
     dpConstants::SCRIPT_DATADIR_LOG,
     dpConstants::SCRIPT_DATADIR_PAGES,
-    dpConstants::SCRIPT_DATADIR_TEMPLATES
+    dpConstants::SCRIPT_DATADIR_TEMPLATES,
+    dpConstants::SCRIPT_DATADIR_TEMP
 );
 
 function usage()
