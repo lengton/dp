@@ -172,7 +172,7 @@ class dpPage extends dpData
 
         // Display render output
         $log_out = $this->getConfig ('dpScriptName').(($url_target_info && isset ($url_target_info['name'])) ? ': '.$url_target_info['name'] : '');
-        $this->log (sprintf ('Page [%s] rendered in %.2fms', $log_out, ($render_stop_time - $render_start_time)));
+        $this->log (sprintf ('Page [%s] rendered in %.3fs', $log_out, ($render_stop_time - $render_start_time) / 1000));
         echo $out;
     } // render
 
