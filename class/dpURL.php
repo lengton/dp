@@ -19,8 +19,6 @@
 
 class dpURL extends dpObject
 {
-    public $valid = false;
-
     private $url_elements = false;
     private $url_parameters = false;
 
@@ -143,7 +141,7 @@ class dpURL extends dpObject
     } // getURLElements
 
 
-    public function getPath ($index = false)
+    public function getPath ($index = false, $only_valid = false)
     {
         if (!empty ($this->url_elements))
         {
@@ -160,6 +158,11 @@ class dpURL extends dpObject
                     continue;
                 if (($index !== false) && ($indx == ($index + 1)))
                     break;
+                if ($only_valid)
+                {
+                    if ($url_item['type'] == 'none')
+                        break;
+                } // return path that is valid
 
                 $path .= '/'.$url_item['name'];
             } // foreach
@@ -171,7 +174,7 @@ class dpURL extends dpObject
     } // getPath
 
 
-    public function getURLPath ($index = false)
+    public function getURLPath ($index = false, $only_valid = false)
     {
         if (!empty ($this->url_elements))
         {
@@ -182,6 +185,11 @@ class dpURL extends dpObject
                     continue;
                 if (($index !== false) && ($indx == ($index + 1)))
                     break;
+                if ($only_valid)
+                {
+                    if ($url_item['type'] == 'none')
+                        break;
+                } // return path that is valid
 
                 $url_path .= '/'.$url_item['name'];
             } // foreach
@@ -260,7 +268,6 @@ class dpURL extends dpObject
                 $this->url_filetarget_pos = ($pos + 1);  // And URL element position (0th is our script)
             } else {
                 $item_type = 'none';
-                $invalid++;
             } // if non-type, then update invalid count
 
             $url_info['name'] = $url_item;
@@ -276,10 +283,6 @@ class dpURL extends dpObject
         // Assign this URLs last file type name
         if ($file_name !== false)
             $this->url_file_name = $file_name;
-
-        // Flag if URL is valid
-        if ($invalid < 1)
-            $this->valid = true;
 
         return ($url_elements);
     } // processURL
@@ -318,7 +321,7 @@ class dpURL extends dpObject
     } // getURLTargetFileInfo
 
 
-    public function getURLClassName ($index = false)
+    public function getURLClassName ($index = false, $only_valid = false)
     {
         if (!empty ($this->url_elements))
         {
@@ -327,6 +330,11 @@ class dpURL extends dpObject
             {
                 if (($index !== false) && ($indx == ($index + 1)))
                     break;
+                if ($only_valid)
+                {
+                    if ($url_item['type'] == 'none')
+                        break;
+                } // return path that is valid
 
                 $class_name .= $url_item['name'].'_';
             } // foreach

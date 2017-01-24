@@ -44,6 +44,16 @@ class dpPage extends dpData
     } // __construct
 
 
+    public function addClassPathCache ($class, $path)
+    {
+        if (self::$dp_classpath_cache === false)
+            self::$dp_classpath_cache = array ();
+
+        if ($tclass = trim ($class))
+            self::$dp_classpath_cache[$class] = $path;
+    } // addClassPathCache
+
+
     public function dpPageClassLoader ($class, $class_path = false)
     {
         if ($class_path == false)
@@ -54,7 +64,7 @@ class dpPage extends dpData
             // Has this class been cached?
             if (self::$dp_classpath_cache && isset (self::$dp_classpath_cache[$tclass]))
             {
-                require_once self::$dp_classpath_cache[$tclass][$tclass];
+                require_once self::$dp_classpath_cache[$tclass];
                 return true;
             } // cached class?
 
@@ -74,8 +84,8 @@ class dpPage extends dpData
                     {
                         if (($dir_entry == '.') || ($dir_entry == '..') || !is_dir ($class_path.$dir_entry))
                             continue;
-
-                        $this->dpPageClassLoader ($class, $class_path.$dir_entry.'/');
+                        if ($this->dpPageClassLoader ($class, $class_path.$dir_entry.'/'))
+                            break;
                     } // foreach
                 } // has directory entries
             } // Require dp Classes
@@ -93,14 +103,21 @@ class dpPage extends dpData
     } // register_autoload
 
 
+    private function get_milliseconds ()
+    {
+        list($usec, $sec) = explode(' ', microtime());
+        return ((int) $sec * 1000 + ((float) $usec * 1000));
+    } // get_milliseconds
+
+
     public function render ()
     {
         $out = '';
         $url_target_info = false;
-        $render_start_time = microtime(true);
+        $render_start_time = $this->get_milliseconds ();
 
         // Render only if URL is valid
-        if ($this->dpURL && ($this->dpURL->valid === true))
+        if ($this->dpURL)
         {
             // REGISTER APP AUTOLOAD FUNCTION
             if (self::$dp_classpath_cache === false)
@@ -135,7 +152,7 @@ class dpPage extends dpData
                                         break;
 
                                     case 'tag' :
-                                        $out .= $this->page_object->callMethod ($value, true);
+                                        $out .= trim ($this->page_object->callMethod ($value, true));
                                         break;
                                 } // switch
                             } // foreach
@@ -151,9 +168,11 @@ class dpPage extends dpData
             } // Do we have page elements?
         } // URL valid?
 
+        $render_stop_time = $this->get_milliseconds ();
+
         // Display render output
         $log_out = $this->getConfig ('dpScriptName').(($url_target_info && isset ($url_target_info['name'])) ? ': '.$url_target_info['name'] : '');
-        $this->log (sprintf ('Page [%s] rendered in %.6fs', $log_out, (microtime(true) - $render_start_time)));
+        $this->log (sprintf ('Page [%s] rendered in %.2fms', $log_out, ($render_stop_time - $render_start_time)));
         echo $out;
     } // render
 
@@ -188,14 +207,18 @@ class dpPage extends dpData
                     $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_PAGES)).'/';
                     break;
 
+                case 'class_path' :
+                    $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CLASS)).'/';
+                    break;
+
                 case 'page_url_path' :
                     if ($this->dpURL)
-                        $val = $this->dpURL->getURLPath ();
+                        $val = $this->dpURL->getURLPath (false, true);
                     break;
 
                 case 'page_fullpath' :
                     if ($this->dpURL)
-                        $val = $this->dpURL->getPath ();
+                        $val = $this->dpURL->getPath (false, true);
                     break;
 
                 case 'page_url_filename' :
@@ -210,9 +233,16 @@ class dpPage extends dpData
 
                 case 'page_class_name' :
                     if ($this->dpURL)
-                        $val = $this->dpURL->getURLClassName ();
+                        $val = $this->dpURL->getURLClassName (false, true);
+                    break;
+
+                case 'url_elements' :
+                    if ($this->dpURL)
+                        $val = $this->dpURL->getURLElements ();
+                    break;
             } // switch
         } // Has key?
+
         return ($val);
     } // getInfo
 
@@ -351,7 +381,7 @@ class dpPage extends dpData
                         } // while
                     } else {
                         if ($i == 0)
-                            $static_text .= $line.PHP_EOL;
+                            $static_text .= $line;
                         else $static_text .= substr ($line, $i);
                     } // Do we have dp tags?
                 } // while
@@ -509,7 +539,7 @@ class dpPage extends dpData
                                             switch ($ptag)
                                             {
                                                 case 'text' :
-                                                    fwrite ($fp, 'echo "'.str_replace ('"', '\"', $pdata).'";'.PHP_EOL);
+                                                    fwrite ($fp, 'echo "'.str_replace ('"', '\"', trim ($pdata)).'";'.PHP_EOL);
                                                     break;
 
                                                 case 'tag' :

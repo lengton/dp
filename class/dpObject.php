@@ -46,7 +46,7 @@ class dpObject
         {
             if (isset (self::$dp_config[$key]))
                 return (self::$dp_config[$key]);
-            return (false);
+            return false;
         }
         return (self::$dp_config);
     } // getConfig
@@ -57,9 +57,9 @@ class dpObject
         if (strlen ($key))
         {
             self::$dp_config[$key] = $value;
-            return ($value);
+            return $value;
         }
-        return (false);
+        return false;
     } // setConfig
 
 
@@ -77,7 +77,7 @@ class dpObject
                 {
                     $file_name = substr ($rpath, ($sp + 1));
                     $rpath = ltrim (substr ($rpath, 0, $sp), dpConstants::URL_TRIM_STR);
-                } else return (false);
+                } else return false;
             } // Extract file
 
             // Create path directories
@@ -96,15 +96,15 @@ class dpObject
                         {
                             if (@mkdir ($tdir))
                                 @chmod ($tdir, 0775);
-                            else $err++;
                         } // file exists?
                     } // foreach
 
-                    return ($err == 0 ? true : false);
+                    return true;
                 } // Has dir elements?
             } // Has Raw path?
         } // Has path?
-        return (false);
+
+        return false;
     } // createDirectories
 
 
