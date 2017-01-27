@@ -58,7 +58,12 @@ if ($argc > 2)
         $script_name = $argv[1];
         if (strlen ($script_name) && (strpos ($script_name, '/') === false))
         {
-            $script = $dst.'/'.$script_name;
+            $script_name_dotphp = $script_name;
+            if (($dpos = strpos ($script_name_dotphp, '.php')) === false)
+                $script_name_dotphp = $script_name.'.php';
+            else $script_name = substr ($script_name_dotphp, 0, $dpos);
+
+            $script = $dst.'/'.$script_name_dotphp;
 
             // Check if there's an existing script already
             if (file_exists ($script))
@@ -143,7 +148,7 @@ if ($argc > 2)
                         fclose ($fp);
 
                         // CREATE NEEDED SCRIPT DIRECTORIES
-                        $script_dir = $script.dpConstants::SCRIPT_DATADIR_SUFFIX;
+                        $script_dir = $dst.'/'.$script_name.dpConstants::SCRIPT_DATADIR_SUFFIX;
                         if (!file_exists ($script_dir))
                             mkdir ($script_dir);
                         foreach ($script_dirs as $dir)

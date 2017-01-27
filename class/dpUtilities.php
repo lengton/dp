@@ -66,30 +66,37 @@ class dpUtilities extends dpObject
         } // Has DP Base?
         return (false);
     } // copyAppUtilities
-    
+
 
     public function createHTAccess ($dst = false, $script_name = false)
     {
         if (($dst = trim ($dst)) && is_dir ($dst) && ($script_name = trim ($script_name)))
         {
+            $script_name_dotphp = $script_name;
+            if (($dpos = strpos ($script_name_dotphp, '.php')) === false)
+                $script_name_dotphp = $script_name.'.php';
+            else $script_name = substr ($script_name_dotphp, 0, $dpos);
+
             if ($fp = fopen ($dst.'/.htaccess', 'w+'))
             {
-                $has_match = false;
+                $has_rewrite = $has_match = false;
                 while ($line = fgets ($fp))
                 {
-                    if (strpos ($line, '"^'.$script_name.'$"') !== false)
-                    {
+                    if (strpos ($line, '^'.$script_name.'/(.*)"') !== false)
                         $has_match = true;
-                        break;
-                    } // Do we have an .htaccess line match?
+                    if (strpos ($line, 'RewriteEngine On') !== false)
+                        $has_rewrite = true;
                 } // while
 
                 if ($has_match === false)
                 {
-                    fwrite ($fp, PHP_EOL);
-                    fwrite ($fp, '<FilesMatch "^'.$script_name.'$">'.PHP_EOL);
-                    fwrite ($fp, '  ForceType application/x-httpd-php'.PHP_EOL);
-                    fwrite ($fp, '</FilesMatch>'.PHP_EOL);
+                    if ($has_rewrite === false)
+                    {
+                        fwrite ($fp, 'RewriteEngine On'.PHP_EOL);
+                        fwrite ($fp, 'RewriteBase /'.PHP_EOL);
+                    }
+                    fwrite ($fp, 'RewriteRule ^'.$script_name.'/(.*) /'.$script_name_dotphp.'/$1 [QSA]'.PHP_EOL);
+                    fwrite ($fp, 'RewriteRule ^'.$script_name.'$ /'.$script_name_dotphp.' [QSA]'.PHP_EOL);
                 } // No match so append to .htaccess
 
                 fclose ($fp);

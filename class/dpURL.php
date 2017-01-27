@@ -58,7 +58,8 @@ class dpURL extends dpObject
             if (strlen ($this->server_script) && (($lspos = strrpos ($this->server_script, '/')) !== false))
             {
                 $this->script_base = substr ($this->server_script, 0, $lspos).'/';
-                $this->script_name = substr ($this->server_script, ($lspos + 1));
+                if ($script_name = substr ($this->server_script, ($lspos + 1)))
+                    $this->script_name = substr ($script_name, 0, strpos ($script_name, '.'));
 
                 // Copy this to global config
                 $this->setConfig ('dpScriptName', $this->script_name);
@@ -251,7 +252,7 @@ class dpURL extends dpObject
                 continue;
 
             // What kind of entity?
-            if (is_dir ($base_dir))
+            if (@is_dir ($base_dir))
             {
                 $item_type = 'dir';
 
@@ -262,7 +263,7 @@ class dpURL extends dpObject
                 // Check if we have dpIncludes in this directory
                 if (is_file ($base_dir.'/'.dpConstants::DP_COMMON_INCLUDE))
                     $url_info['has_include'] = true;
-            } else if (is_file ($base_dir)) {
+            } else if (@is_file ($base_dir)) {
                 $item_type = 'file';
                 $file_name = $url_item;       // Assign file types
                 $this->url_filetarget_pos = ($pos + 1);  // And URL element position (0th is our script)
