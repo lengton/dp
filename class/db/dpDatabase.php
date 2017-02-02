@@ -1,7 +1,7 @@
 <?php
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-class dpDatabase extends dpObject
+abstract class dpDatabase extends dpObject
 {
     public static $pdo_db = NULL;
     private static $pdo_driver = false;
@@ -459,5 +459,5 @@ class dpDatabase extends dpObject
         else throw new dbException ('No database resource.');
     } // sqlEsc
 
-} // dpSQLcommon
+} // dpDatabase
 ?>

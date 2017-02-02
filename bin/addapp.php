@@ -35,7 +35,6 @@ $script_dirs = array (
     dpConstants::SCRIPT_DATADIR_BIN,
     dpConstants::SCRIPT_DATADIR_CACHE,
     dpConstants::SCRIPT_DATADIR_CLASS,
-    dpConstants::SCRIPT_DATADIR_DB,
     dpConstants::SCRIPT_DATADIR_LOG,
     dpConstants::SCRIPT_DATADIR_PAGES,
     dpConstants::SCRIPT_DATADIR_TEMPLATES,
@@ -118,6 +117,9 @@ if ($argc > 2)
                                                 $config['php_commandline_path'] = $cmd_path;
                                         } // Get PHP command line path
 
+                                        // Always overwrite
+                                        $config['dp_script_dir'] = 1;
+
                                         // Do automatic config value modification, if needed
                                         fwrite ($fp, '$config = array ('.PHP_EOL);
                                         foreach ($config as $key => $value)
@@ -131,6 +133,13 @@ if ($argc > 2)
                                             {
                                                 $raw_string = '__DIR__.\''.substr ($value, strlen ($ppath)).'\'';
                                             } // convert paths
+
+                                            // Do transformations
+                                            switch ($key)
+                                            {
+                                                case 'dp_script_dir' :
+                                                    $raw_string = '__DIR__';
+                                            } // switch
 
                                             fwrite ($fp, '  \''.$key.'\' => ');
                                             if ($raw_string)

@@ -138,13 +138,14 @@ class dpPage extends dpData
             $this->startSession ();
 
             // Load page elements, if any
-            if (!empty ($url_target_info) && ($this->page_object = $this->loadPage (array ('url_target_info' => $url_target_info))))
+            if ($this->page_object = $this->loadPage ())
             {
                 // Call dpStart before anything else
                 $out .= $this->page_object->callMethod (dpConstants::TAGNAME_STARTPAGE, true);
 
                 // Does this page have a template? For Raw files, we force NO templates
-                if (!isset ($url_target_info['raw']) && $this->loadTemplate ())
+                if (!(isset ($url_target_info['raw']) || $this->page_object->getPageProp ('raw')) &&
+                    $this->loadTemplate ())
                 {
                     // Do we have template elements?
                     if (!empty ($this->template_data))
@@ -449,7 +450,7 @@ class dpPage extends dpData
                 return (false);
 
             // Read/process and write page data
-            if ($fp = fopen ($cached_pg, 'w'))
+            if ($fp = @fopen ($cached_pg, 'w'))
             {
                 if ($pe = $this->parsePage ($params))
                 {
@@ -512,6 +513,19 @@ class dpPage extends dpData
             fwrite ($fp, dpConstants::PHP_TAG_START.PHP_EOL);
             fwrite ($fp, dpConstants::DP_PAGE_CLASS_HEADER.': '.$class_name.PHP_EOL);
             fwrite ($fp, 'class '.dpConstants::DP_PAGE_CLASS_PREFIX.$class_name." extends dpAppPage\n{\n");
+
+            // Build page class properties
+            if (isset ($pe['dpPageProperties']))
+            {
+                foreach ($pe['dpPageProperties'] as $p_name => $p_value)
+                {
+                    fwrite ($fp, dpConstants::DP_PAGE_CLASS_INDENT.'public $'.dpConstants::DP_PAGE_CLASS_PROP_PREFIX.$p_name);
+                    fwrite ($fp, ' = \''.addslashes ($p_value)."';\n");
+                } // foreach
+
+                fwrite ($fp, PHP_EOL);
+                unset ($pe['dpPageProperties']);
+            } // has page properties?
 
             // Build page class methods
             foreach ($pe as $tag => $tag_items)
@@ -620,31 +634,48 @@ class dpPage extends dpData
         // Modify switches
         if (is_array ($params))
         {
-            // Is this a raw path?
-            if (isset ($params['url_target_info']) && isset ($params['url_target_info']['raw']))
-                $add_default = true;
-
             // Do we need to parse an external file?
             if (isset ($params['page_path']) && strlen ($params['page_path']))
                 $pg_file = $params['page_path'];
         } // Has URL target?
+
+        // Is this a raw path?
+        $url_target_info = $this->getInfo ('page_url_target_info');
+        if ($url_target_info && isset ($url_target_info['raw']))
+            $add_default = true;
 
         // Read page file
         if (file_exists ($pg_file) && ($fp = fopen ($pg_file, 'r')))
         {
             // Read all the file -- First pass so we can pre-process
             $file_lines = array ();
+            $page_properties = array ();
             $has_default_tag = 0;
             while (($line = fgets ($fp)) !== false)
             {
                 // Ignore comments
                 if ($line[0] == '#') continue;
 
+                // Do we have page properties?
+                if (($line[0] == '.') && (strlen ($line) > 1))
+                {
+                    // Check for line delimeter
+                    if (($dline = strpos ($line, ' ')) !== false)
+                        $page_properties[trim (substr ($line, 1, $dline))] = trim (substr ($line, ($dline + 1)));
+                    else $page_properties[trim (substr ($line, 1))] = true;
+
+                    continue;
+                } // page properties
+
                 $file_lines[] = $line;
                 if (strlen ($line) && (strpos ($line, ':'.dpConstants::TAGNAME_DEFAULT) === 0))
                     $has_default_tag++;
             } // while
             fclose ($fp);
+
+            // Check if this page is being forced to be set as 'raw'
+            if (!empty ($page_properties) && isset ($page_properties['raw']))
+                $add_default = true;
 
             // DO WE HAVE TAGS? IF NOT, THEN ADD DEFAULT TAG
             if ($add_default && ($has_default_tag === 0))
@@ -716,6 +747,10 @@ class dpPage extends dpData
                     $page_elements[$tagname] = $pbody;
             } // Parse tag body
         } // Has main template file?
+
+        // Add page properties
+        if (!empty ($page_properties))
+            $page_elements['dpPageProperties'] = $page_properties;
 
         return ($page_elements);
     } // parsePage

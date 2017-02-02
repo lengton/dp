@@ -37,6 +37,16 @@ class dpAppPage extends dpPage
     } // __construct
 
 
+    public function getPageProp ($name = false)
+    {
+        $tname = trim ($name);
+        if ($tname && property_exists ($this, ($prop = dpConstants::DP_PAGE_CLASS_PROP_PREFIX.$tname)))
+            return $this->$prop;
+
+        return NULL;
+    } // getPageProp
+
+
     public function getPageData ()
     {
         return ($this->page_data);

@@ -1,7 +1,7 @@
 <?php
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-class dpData extends dpDatabase
+abstract class dpData extends dpDatabase
 {
     public $table_name = false;
     public $table_def = false;
@@ -25,6 +25,7 @@ class dpData extends dpDatabase
     public function __construct ($config = false)
     {
         parent::__construct ($config);
+        $this->table_name = get_class ($this);
     } // __construct
 
 
@@ -107,6 +108,16 @@ class dpData extends dpDatabase
     } // insert
 
 
+    /*
+     *  Selects from the database table
+     *
+     *  $kv_pair is type array ('db field' => value)
+     *
+     *  if 'value' === false, then 'db field' is used as the select field
+     *
+     *  if 'value' is given and the corresponding 'db field' is an index field, then
+     *     this is used in the 'where' clause of the select.
+     */
     public function select ($kv_pair, $params = false)
     {
         if ($db_params = $this->select_helper ($kv_pair, $params))
@@ -118,7 +129,7 @@ class dpData extends dpDatabase
                 {
                     if (isset ($where[$key]))
                         unset ($db_params['data'][$key]);
-                } // Iterate on all key-value pair for update
+                } // Iterate on all key-value pair
             } // Do we have the 'where' clause?
 
             return ($this->dpCallSQL ('select_table_row', $db_params));
@@ -128,7 +139,7 @@ class dpData extends dpDatabase
     } // select
 
 
-    public function get_row ($row = 0)
+    public function get_row ()
     {
         return ($this->dpCallSQL ('fetch_row'));
     } // get_row
@@ -150,6 +161,12 @@ class dpData extends dpDatabase
     } // delete
 
 
+    public function query ($sql)
+    {
+        return ($this->dpCallSQL ('query', $sql));
+    } // query
+
+
     public function tableExists ()
     {
         return ($this->dpCallSQL ('table_exists'));
@@ -163,13 +180,13 @@ class dpData extends dpDatabase
      *  if db_field is an index, this is used in the 'where' clause
      *
      *  By default, where clause operator is '='. Changing operators can be done by inserting
-     *  'opr_db_field' => SQL operator ('>', '<=', etc.) results to (db_field opr value)
+     *  'opr_<DB field>' => SQL operator ('>', '<=', etc.) results to (db_field opr value)
      *
-     *  Adding 'conj_db_field' => SQL conjuction ('AND', 'OR') changes the default 'AND' conjunction
+     *  Adding 'conj_<DB field>' => SQL conjuction ('AND', 'OR') changes the default 'AND' conjunction
      *  between the next where clause triplet.
      *
      *  $params array of optional where clause:
-     *  $params['where'] = array ('id', '<db_field>');
+     *  $params['where'] = array ('id', '<DB field>');
      *
      */
     private function select_helper (&$kv_pair, &$params)
@@ -192,6 +209,11 @@ class dpData extends dpDatabase
                         (!empty ($params) && isset ($params['where']) &&
                             is_array($params['where']) && in_array ($key, $params['where'])))
                     {
+                        // Even if this field is an index field, but it has 'false' as its value,
+                        // then it belongs to the select fields
+                        if ($value === false)
+                            continue;
+
                         $opr = '=';
                         if (isset ($kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key]) &&
                             (trim ($kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key]) !== false))

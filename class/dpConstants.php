@@ -39,6 +39,7 @@ class dpConstants
     const DP_PAGE_CLASS_HEADER = '// dp Page Class File';
     const DP_PAGE_CLASS_PREFIX = 'dpAppPage_';
     const DP_PAGE_CLASS_FUNC_PREFIX = 'dpAppPageFunc_';
+    const DP_PAGE_CLASS_PROP_PREFIX = 'dpAppPageProp_';
     const DP_PAGE_CLASS_INDENT = '    ';
     const DP_PHP_EXTENSION = '.php';
 
@@ -70,6 +71,8 @@ class dpConstants
     const PARSE_STATE_PARAM_VALUE = 10;
 
     const DB_UPDATE_OR_INSERT = 'dpUpdateOrInsert';
+
+    const DP_TIMEZONE = 'America/Chicago';
 
 } // dpConstants
 ?>

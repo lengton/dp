@@ -29,14 +29,38 @@ class dpObject
         if ((self::$dp_config === false) && isset ($GLOBALS['DP_GLOBALS']))
             self::$dp_config = $GLOBALS['DP_GLOBALS'];
         if ($config && is_array ($config))
-        {
             self::$dp_config = array_merge (self::$dp_config, $config);
-        } // Do we have config
+
+        // Do we have external configs?
+        // External config paths are always rooted at the current script directory
+        if (isset (self::$dp_config['dp_external_config']))
+        {
+            // check for the proper string format
+            $cval = self::$dp_config['dp_external_config'];
+            if (($ldpos = strpos ($cval, ':')) !== false)
+            {
+                $var_name = trim (substr ($cval, 0, $ldpos));
+                $ext_path = trim (substr ($cval, ($ldpos + 1)));
+                if (($ext_path[0] != '/') && ($script_dir = $this->getConfig ('dp_script_dir')))
+                {
+                    $ext_path = $script_dir.'/'.$ext_path;
+                    if (file_exists ($ext_path))
+                    {
+                        require_once ($ext_path);
+                        if (isset ($$var_name) && is_array ($$var_name))
+                        {
+                            self::$dp_config = array_merge (self::$dp_config, $$var_name);
+                            unset ($$var_name);
+                        } // merge to config values
+                    } // does the external config file exists?
+                } // is a relative path?
+            } // has delimeter?
+        } // has external config path?
 
         // INITIALIZATIONS
         if ($tm = $this->getConfig ('dpTimezone'))
             date_default_timezone_set ($tm);
-        else date_default_timezone_set ('America/Chicago');
+        else date_default_timezone_set (dpConstants::DP_TIMEZONE);
     } // __construct
 
 
