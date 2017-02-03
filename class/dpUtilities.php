@@ -77,7 +77,7 @@ class dpUtilities extends dpObject
                 $script_name_dotphp = $script_name.'.php';
             else $script_name = substr ($script_name_dotphp, 0, $dpos);
 
-            if ($fp = fopen ($dst.'/.htaccess', 'w+'))
+            if ($fp = fopen ($dst.'/.htaccess', 'a+'))
             {
                 $has_rewrite = $has_match = false;
                 while ($line = fgets ($fp))
