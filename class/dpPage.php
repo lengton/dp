@@ -224,6 +224,10 @@ class dpPage extends dpData
                     $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_CLASS)).'/';
                     break;
 
+                case 'lib_path' :
+                    $val = implode ('/', array ($this->getConfig ('dpAppBase'), dpConstants::SCRIPT_DATADIR_LIB)).'/';
+                    break;
+
                 case 'page_url_path' :
                     if ($this->dpURL)
                         $val = $this->dpURL->getURLPath (false, true);
@@ -511,6 +515,24 @@ class dpPage extends dpData
             } // Has parameters?
 
             fwrite ($fp, dpConstants::PHP_TAG_START.PHP_EOL);
+
+            // Check page properties for global lineS
+            if (isset ($pe['dpPageProperties']))
+            {
+                foreach ($pe['dpPageProperties'] as $p_name => $p_value)
+                {
+                    if ($p_name == 'global')
+                    {
+                        if (!is_array ($p_value))
+                            $p_value = array ($p_value);
+                        foreach ($p_value as $line)
+                            fwrite ($fp, $line.PHP_EOL);
+                        unset ($pe['dpPageProperties'][$p_name]);
+                    } // Is this global definitions?
+                } // foreach
+                fwrite ($fp, PHP_EOL);
+            } // has page properties?
+
             fwrite ($fp, dpConstants::DP_PAGE_CLASS_HEADER.': '.$class_name.PHP_EOL);
             fwrite ($fp, 'class '.dpConstants::DP_PAGE_CLASS_PREFIX.$class_name." extends dpAppPage\n{\n");
 
@@ -661,8 +683,30 @@ class dpPage extends dpData
                 {
                     // Check for line delimeter
                     if (($dline = strpos ($line, ' ')) !== false)
-                        $page_properties[trim (substr ($line, 1, $dline))] = trim (substr ($line, ($dline + 1)));
-                    else $page_properties[trim (substr ($line, 1))] = true;
+                    {
+                        $pp_key = strtolower (trim (substr ($line, 1, $dline)));
+                        $pp_value = trim (substr ($line, ($dline + 1)));
+                    }
+                    else
+                    {
+                        $pp_key = strtolower (trim (substr ($line, 1)));
+                        $pp_value = true;
+                    }
+
+                    // Special case for global properties
+                    if (isset ($page_properties[$pp_key]) && ($pp_key == 'global'))
+                    {
+                        if (!is_array ($page_properties[$pp_key]))
+                        {
+                            $fval = $page_properties[$pp_key];
+                            $page_properties[$pp_key] = array ($fval);
+                        }
+                        $page_properties[$pp_key][] = $pp_value;
+                        $pp_value = false;
+                    } // Do we have an existing property?
+
+                    if ($pp_value)
+                        $page_properties[$pp_key] = $pp_value;
 
                     continue;
                 } // page properties

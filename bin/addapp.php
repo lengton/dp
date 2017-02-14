@@ -38,7 +38,8 @@ $script_dirs = array (
     dpConstants::SCRIPT_DATADIR_LOG,
     dpConstants::SCRIPT_DATADIR_PAGES,
     dpConstants::SCRIPT_DATADIR_TEMPLATES,
-    dpConstants::SCRIPT_DATADIR_TEMP
+    dpConstants::SCRIPT_DATADIR_TEMP,
+    dpConstants::SCRIPT_DATADIR_LIB
 );
 
 function usage()
