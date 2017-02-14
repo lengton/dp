@@ -54,7 +54,10 @@ abstract class dpData extends dpDatabase
 
     public function update ($kv_pair, $params = false)
     {
-        if ($db_params = $this->select_helper ($kv_pair, $params))
+        if (is_array ($params) && !isset ($params['where']))
+            $params = array ('where' => $params);
+
+        if ($db_params = $this->select_helper ($kv_pair, $params, true))
         {
             $cleaned_kv_pair = $db_params['data'];
             if (isset ($db_params['where']) && !empty ($db_params['where']))
@@ -68,7 +71,7 @@ abstract class dpData extends dpDatabase
             } // Do we have the 'where' clause?
 
             $res = $this->dpCallSQL ('update_table_row', $db_params);
-            if (($res === false) || ($this->dpCallSQL ('affected_rows', $this->db_result) == 0))
+            if (($res === false) || ($this->dpCallSQL ('affected_rows') == 0))
             {
                 if (!empty ($params) && isset ($params[dpConstants::DB_UPDATE_OR_INSERT]))
                     $res = $this->dpCallSQL ('insert_table_row', $cleaned_kv_pair);
@@ -178,6 +181,7 @@ abstract class dpData extends dpDatabase
      *
      *  $kv_pair array of key-value pair: array ('db_field' => value, ...)
      *  if db_field is an index, this is used in the 'where' clause
+     *  if value is === false, then this is used for the 'select' fields
      *
      *  By default, where clause operator is '='. Changing operators can be done by inserting
      *  'opr_<DB field>' => SQL operator ('>', '<=', etc.) results to (db_field opr value)
@@ -189,12 +193,23 @@ abstract class dpData extends dpDatabase
      *  $params['where'] = array ('id', '<DB field>');
      *
      */
-    private function select_helper (&$kv_pair, &$params)
+    private function select_helper (&$kv_pair, &$params, $for_update = false)
     {
         $db_params = false;
         if ($this->table_def && is_array ($kv_pair) && !empty ($kv_pair))
         {
             $where_fields = array ();
+
+            // We need to populate kv_pair keys if needed
+            if ($for_update)
+            {
+                if (isset ($params['where']) && !empty ($params['where']))
+                {
+                    foreach ($params['where'] as $key => $value)
+                        $kv_pair[$key] = $value;
+                } // we have a 'where' array?
+            } // this is for 'update's?
+
             foreach ($kv_pair as $key => $value)
             {
                 if (strpos ($key, dpConstants::DP_DATA_OPERATOR_PREFIX) !== false)
@@ -205,19 +220,20 @@ abstract class dpData extends dpDatabase
                     $field_def = $this->table_def[$key];
 
                     // Harvest 'where' fields
-                    if ((isset ($field_def['index']) && $field_def['index']) ||
-                        (!empty ($params) && isset ($params['where']) &&
-                            is_array($params['where']) && in_array ($key, $params['where'])))
+                    if ((($for_update === false) && ($value !== false)) ||
+                        (isset ($field_def['index']) && $field_def['index']) ||
+                        (!empty ($params) && isset ($params['where']) && is_array($params['where']) && in_array ($key, $params['where'])))
                     {
                         // Even if this field is an index field, but it has 'false' as its value,
-                        // then it belongs to the select fields
-                        if ($value === false)
+                        // then it belongs to the 'select' fields
+                        if (($for_update === false) && ($value === false))
                             continue;
 
                         $opr = '=';
                         if (isset ($kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key]) &&
                             (trim ($kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key]) !== false))
                             $opr = $kv_pair[dpConstants::DP_DATA_OPERATOR_PREFIX.$key];
+
                         $where_fields[$key] = array ('opr' => $opr, 'value' => $value);
 
                         if (isset ($kv_pair[dpConstants::DP_DATA_CONJUNCTION_PREFIX.$key]) &&
