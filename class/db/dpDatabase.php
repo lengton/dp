@@ -206,7 +206,7 @@ abstract class dpDatabase extends dpObject
                 list ($where_clause, $where_values) = $this->build_where_clause ($params['where']);
                 if (trim ($where_clause))
                     $sql = 'UPDATE '.$this->table_name.' SET '.implode (', ', $update_fields).$where_clause;
-        error_log ($sql);
+
                 return ($this->dpDB_query_params ($sql, array_merge ($param_values, $where_values)));
             } // Do we have update fields?
         } // has params?
