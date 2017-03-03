@@ -42,6 +42,7 @@ class dpConstants
     const DP_PAGE_CLASS_PROP_PREFIX = 'dpAppPageProp_';
     const DP_PAGE_CLASS_INDENT = '    ';
     const DP_PHP_EXTENSION = '.php';
+    const DP_RETURN_LABEL_PREFIX = 'dpReturnLabel_';
 
     const DB_METHOD_PREFIX = 'dpDB_';
     const DB_MYSQL_IDENT = 'mysql';
@@ -69,6 +70,7 @@ class dpConstants
     const PARSE_STATE_IN_QUOTE = 8;
     const PARSE_STATE_PARAM_NAME = 9;
     const PARSE_STATE_PARAM_VALUE = 10;
+    const PARSE_STATE_PARAM_RETURN_LABEL = 11;
 
     const DB_UPDATE_OR_INSERT = 'dpUpdateOrInsert';
 

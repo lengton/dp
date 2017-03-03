@@ -1,7 +1,7 @@
 <?php
 /**
  * dp Web framework
- * Copyright (C) 2015 Daniel G. Pamintuan II
+ * Copyright (C) 2015-2017 Daniel G. Pamintuan II
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,19 +49,19 @@ class dpAppPage extends dpPage
 
     public function getPageData ()
     {
-        return ($this->page_data);
+        return $this->page_data;
     } // getData
 
 
-    public function getValue ($tag = false, $params = false)
+    public function getValue ($tag = false, $params = false, $string = true)
     {
         if (trim ($tag) == false)
-            return (false);
+            return false;
 
         // Page data has priority
         if (!empty ($this->page_data) && isset ($this->page_data[$tag]))
-            return ($this->page_data[$tag]);
-        return ($this->callMethod ($tag, true, $params));
+            return $this->page_data[$tag];
+        return $this->callMethod ($tag, $string, $params);
     } // getValue
 
 
@@ -69,8 +69,52 @@ class dpAppPage extends dpPage
     {
         if ((trim ($tag) != false) && is_array ($this->page_data))
             $this->page_data[$tag] = $value;
-        return ($value);
     } // setValue
+
+
+    public function accessObject ($tag = false)
+    {
+        if ($tag[0] != '@')
+            return '';
+
+        $object_label = substr ($tag, 1);
+        $label_items = explode ('.', $object_label);
+        if (!empty ($label_items) && ($value = $this->getValue ($label_items[0], false, false)))
+        {
+            switch (gettype ($value))
+            {
+                case 'boolean' :
+                case 'integer' :
+                case 'double' :
+                case 'string' :
+                    return $value;
+
+                case 'array' :
+                    if (($item_count = count ($label_items)) > 1)
+                    {
+                        $base_val = $value;
+                        for ($i = 1; $i < $item_count; $i++)
+                        {
+                            if (is_array ($base_val) && (isset ($base_val[$label_items[$i]]) || array_key_exists ($label_items[$i], $base_val)))
+                                $base_val = $base_val[$label_items[$i]];
+                            else break;
+                        } // for
+
+                        return ' '.$base_val;
+                    } // has reference?
+                    break;
+
+                case 'object' :
+                case 'resource' :
+
+                case 'NULL' :
+                case 'unknown type' :
+                default :
+            } // switch
+        } // has value?
+
+        return '';
+    } // accessObject
 
 
     public function callMethod ($tag, $string = false, $call_params = false)
@@ -103,10 +147,12 @@ class dpAppPage extends dpPage
                 {
                     $out = ob_get_contents();
                     ob_end_clean();
-                    return ($out);
+                    return $out;
                 } // Output string?
-                return ($ret);
-            } else {
+                return $ret;
+            }
+            else
+            {
                 // The method doesn't exist locally... so let's bubble up!
                 // Usually we ONLY check for includes
                 if ($this->dpURL && ($ue = $this->dpURL->getURLElements ($this->url_target_info)))
@@ -135,7 +181,8 @@ class dpAppPage extends dpPage
                 } // Do we have a dpURL object?
             } // Do we have the method?
         } // Has tag string?
-        return (false);
+
+        return false;
     } // callMethod
 } // dpAppPage
 ?>

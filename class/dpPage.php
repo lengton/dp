@@ -260,7 +260,7 @@ class dpPage extends dpData
             } // switch
         } // Has key?
 
-        return ($val);
+        return $val;
     } // getInfo
 
 
@@ -292,7 +292,7 @@ class dpPage extends dpData
         if ($exists_ct === false)
         {
             if ($this->createDirectories ($cached_tp, $file_path = true) === false)
-                return (false);
+                return false;
 
             // Read and process template
             $this->template_data = $this->parseTemplate ($tp_name, $is_file = true);
@@ -306,7 +306,7 @@ class dpPage extends dpData
                 $this->template_data = unserialize ($str);
         } // Create/Read cached entry?
 
-        return (true);
+        return true;
     } // loadTemplate
 
 
@@ -338,14 +338,15 @@ class dpPage extends dpData
                 foreach ($lines as $line)
                 {
                     $i = 0;
-                    CHECKTAG:
+                    CHECKTAG: // Check if we have <dp: tags
                     if (($tpos = strpos ($line, self::$dpTag, $i)) !== false)
                     {
                         // End Static text accumulation
                         if ($i != $tpos)
                         {
-                            $static_text .= substr ($line, $i, $tpos);
-                            $template_data[] = array('text' => $static_text);
+                            $static_text .= substr ($line, $i, ($tpos - $i));
+                            if (trim ($static_text))
+                                $template_data[] = array('text' => $static_text);
                             $static_text = '';
                         } // Save static text
 
@@ -357,7 +358,7 @@ class dpPage extends dpData
                         {
                             switch ($pstate)
                             {
-                                case dpConstants::PARSE_STATE_TAGNAME:
+                                case dpConstants::PARSE_STATE_TAGNAME : // <dp:tagname/>
                                     if (ctype_space ($line[$i]) || (strpos ('</>', $line[$i]) !== false))
                                     {
                                         $pstate = dpConstants::PARSE_STATE_TAGPARAMS;
@@ -366,7 +367,7 @@ class dpPage extends dpData
                                     $tagname .= $line[$i];
                                     break;
 
-                                case dpConstants::PARSE_STATE_TAGPARAMS:
+                                case dpConstants::PARSE_STATE_TAGPARAMS : // <dp:tagname param="value"/>
                                     if (strpos ('</>', $line[$i]) !== false)
                                     {
                                         $pstate = dpConstants::PARSE_STATE_ENDTAG;
@@ -375,16 +376,33 @@ class dpPage extends dpData
                                     $tagparams .= $line[$i];
                                     break;
 
-                                case dpConstants::PARSE_STATE_ENDTAG:
+                                case dpConstants::PARSE_STATE_ENDTAG :
                                     if (strlen ($tagname))
                                     {
+                                        // tag => array ('name' => tagname, 'params' => array_params, 'return_object_label' => label)
                                         $tag_data = array ('tag' => array ('name' => $tagname));
                                         $tag_params = $this->processTagParameters ($tagparams);
                                         if (!empty ($tag_params))
+                                        {
+                                            // Scan for return object labels
+                                            foreach ($tag_params as $key => $value)
+                                            {
+                                                if (strpos ($key, dpConstants::DP_RETURN_LABEL_PREFIX) == 0)
+                                                {
+                                                    // Only assigns the last entry -- only one exists
+                                                    $tag_data['tag']['return_object_label'] = $value;
+                                                    unset ($tag_params[$key]);
+                                                }
+                                            } // foreach
                                             $tag_data['tag']['params'] = $tag_params;
+                                        }
                                         $template_data[] = $tag_data;
                                         $tagname = '';
                                     } // Finalize data nugget
+
+                                    // Gobble up until we are at the end tag
+                                    while ($line[$i] != '>')
+                                        $i++;
 
                                     if ($line[$i] == '>')
                                     {
@@ -408,7 +426,7 @@ class dpPage extends dpData
             } // Has main template file?
         } // Has template name?
 
-        return ($template_data);
+        return $template_data;
     } // parseTemplate
 
 
@@ -451,7 +469,7 @@ class dpPage extends dpData
         if ($exists_pt === false)
         {
             if ($this->createDirectories ($cached_pg, $file_path = true) === false)
-                return (false);
+                return false;
 
             // Read/process and write page data
             if ($fp = @fopen ($cached_pg, 'w'))
@@ -478,10 +496,10 @@ class dpPage extends dpData
             require_once $cached_pg;
 
             $class_name = dpConstants::DP_PAGE_CLASS_PREFIX.$page_class_name;
-            return (new $class_name ($this));
+            return new $class_name ($this);
         } // Require page file
 
-        return (false);
+        return false;
     } // loadPage
 
 
@@ -495,9 +513,9 @@ class dpPage extends dpData
             @exec ($exec_str, $output, $res);
             if ($res)
                 $this->log ('Syntax Error: '.$this->getInfo ('page_fullpath'));
-            return ($res);
+            return $res;
         } // Has needed data?
-        return (false);
+        return false;
     } // checkSyntax
 
 
@@ -565,7 +583,7 @@ class dpPage extends dpData
                     {
                         switch ($item_type)
                         {
-                            case 'code' :
+                            case 'code' : // Raw lines of PHP code
                                 $lines = explode ("\n", $item_data);
                                 foreach ($lines as $line)
                                 {
@@ -574,27 +592,27 @@ class dpPage extends dpData
                                 } // foreach
                                 break;
 
-                            case 'static' :
+                            case 'static' : // Static template text
                             default :
                                 if (($pe = $this->parseTemplate ($item_data)) && !empty ($pe))
                                 {
-                                    $pe_count = count ($pe);
                                     foreach ($pe as $ppos => $pitem)
                                     {
                                         fwrite ($fp, dpConstants::DP_PAGE_CLASS_INDENT.dpConstants::DP_PAGE_CLASS_INDENT);
                                         foreach ($pitem as $ptag => $pdata)
                                         {
+                                            // Currently 2, 'tag' and 'text'
                                             switch ($ptag)
                                             {
-                                                case 'text' :
+                                                case 'text' :  // Static text
                                                     fwrite ($fp, 'echo "'.str_replace ('"', '\"', trim ($pdata)).'";'.PHP_EOL);
                                                     break;
 
-                                                case 'tag' :
-                                                    // GENRATE DP TAG CODE
-                                                    switch ($pdata['name'])
+                                                case 'tag' : // DP tags
+                                                    // GENRATE DP TAG CODE. Where 'name' is the dp:tagname
+                                                    switch ($dp_name = $pdata['name'])
                                                     {
-                                                        // Output tag parameter
+                                                        // Output tag parameter: <dp:param name="parameter name">
                                                         case 'param' :
                                                             if (isset ($pdata['params']) && !empty ($pdata['params']) && isset ($pdata['params']['name']))
                                                             {
@@ -603,7 +621,7 @@ class dpPage extends dpData
                                                             } // We need parameters for this
                                                             break;
 
-                                                        // Output PHP variable
+                                                        // Output PHP variable: <dp:var name="variable name">
                                                         case 'var' :
                                                             if (isset ($pdata['params']) && !empty ($pdata['params']) && isset ($pdata['params']['name']))
                                                             {
@@ -613,15 +631,32 @@ class dpPage extends dpData
                                                             break;
 
                                                         default :
-                                                            fwrite ($fp, 'echo $this->getValue (\''.addslashes ($pdata['name']).'\'');
-                                                            if (isset ($pdata['params']) && !empty ($pdata['params']))
+                                                            // Check if this is accessing an object: e.g. <dp:@dp_name.var/method>
+                                                            if ($dp_name[0] == '@')
                                                             {
-                                                                $params = array();
-                                                                foreach ($pdata['params'] as $key => $value)
-                                                                    $params[] = "'".addslashes($key)."'=>'".addslashes($value)."'";
-                                                                fwrite ($fp, ', array('.implode (',', $params).')');
-                                                            } // Have parameters?
-                                                            fwrite ($fp, ');'.PHP_EOL);
+                                                                fwrite ($fp, 'echo $this->accessObject (\''.addslashes ($dp_name).'\');'.PHP_EOL);
+                                                            }
+                                                            else
+                                                            {
+                                                                if (isset ($pdata['return_object_label']))
+                                                                    fwrite ($fp, '$this->setValue (\''.$pdata['return_object_label'].'\', ');
+                                                                else fwrite ($fp, 'echo ');
+
+                                                                // Default: <dp:tagname/>
+                                                                fwrite ($fp, '$this->getValue (\''.addslashes ($dp_name).'\'');
+                                                                if (isset ($pdata['params']) && !empty ($pdata['params']))
+                                                                {
+                                                                    $params = array();
+                                                                    foreach ($pdata['params'] as $key => $value)
+                                                                        $params[] = "'".addslashes($key)."'=>'".addslashes($value)."'";
+                                                                    fwrite ($fp, ', array('.implode (',', $params).')');
+                                                                } else if (isset ($pdata['return_object_label']))
+                                                                    fwrite ($fp, ', false');
+
+                                                                if (isset ($pdata['return_object_label']))
+                                                                    fwrite ($fp, ', false)');
+                                                                fwrite ($fp, ');'.PHP_EOL);
+                                                            } // DP default
                                                     } // switch
                                             } // switch
                                         } // foreach -- elements
@@ -638,10 +673,10 @@ class dpPage extends dpData
             fwrite ($fp, '} // '.dpConstants::DP_PAGE_CLASS_PREFIX.$class_name."\n");
             fwrite ($fp, dpConstants::PHP_TAG_END.PHP_EOL);
 
-            return (true);
+            return true;
         } // Has resources?
 
-        return (false);
+        return false;
     } // generatePageClass
 
 
@@ -676,9 +711,11 @@ class dpPage extends dpData
             while (($line = fgets ($fp)) !== false)
             {
                 // Ignore comments
+                // e.g.: # Comments in page
                 if ($line[0] == '#') continue;
 
                 // Do we have page properties?
+                // e.g.: .raw
                 if (($line[0] == '.') && (strlen ($line) > 1))
                 {
                     // Check for line delimeter
@@ -732,7 +769,7 @@ class dpPage extends dpData
             {
                 switch ($pstate)
                 {
-                    case dpConstants::PARSE_STATE_TAGBODY:
+                    case dpConstants::PARSE_STATE_TAGBODY : // Looking for line that starts with ':'
                         if ($line[0] == ':')
                         {
                             if (($pbody = $this->processTagBody ($tagbody)) && !empty ($pbody) && strlen ($tagname))
@@ -742,7 +779,7 @@ class dpPage extends dpData
                         $tagbody .= $line;
                         break;
 
-                    case dpConstants::PARSE_STATE_TAGLINE:
+                    case dpConstants::PARSE_STATE_TAGLINE :
                         // Skip blank lines
                         if (strlen (trim ($line)) < 1)
                             continue 2;
@@ -760,7 +797,7 @@ class dpPage extends dpData
                         {
                             switch ($pstate)
                             {
-                                case dpConstants::PARSE_STATE_FINDTAGNAME:
+                                case dpConstants::PARSE_STATE_FINDTAGNAME :
                                     if (ctype_space ($line[$i]) !== true)
                                     {
                                         $tagname = '';
@@ -769,7 +806,7 @@ class dpPage extends dpData
                                     }
                                     break;
 
-                                case dpConstants::PARSE_STATE_TAGNAME:
+                                case dpConstants::PARSE_STATE_TAGNAME :
                                     if (ctype_space ($line[$i]))
                                     {
                                         $tagbody = substr ($line, ($i + 1));
@@ -785,6 +822,7 @@ class dpPage extends dpData
             } // while
 
             // Do we have trailing data?
+            // Tag body is the text after :<pagetag>
             if (strlen ($tagbody))
             {
                 if (($pbody = $this->processTagBody ($tagbody)) && !empty ($pbody) && strlen ($tagname))
@@ -796,7 +834,7 @@ class dpPage extends dpData
         if (!empty ($page_properties))
             $page_elements['dpPageProperties'] = $page_properties;
 
-        return ($page_elements);
+        return $page_elements;
     } // parsePage
 
 
@@ -819,7 +857,7 @@ class dpPage extends dpData
             {
                 switch ($pstate)
                 {
-                    case dpConstants::PARSE_STATE_STATIC_TEXT:
+                    case dpConstants::PARSE_STATE_STATIC_TEXT :  // by default everything is static text
                         if ($body[$i] == '<')
                         {
                             // Is this a PHP tag?
@@ -830,13 +868,13 @@ class dpPage extends dpData
                                     $body_elements[] = array ('static' => trim (substr ($body, $lpos, ($i - $lpos))));
 
                                 $lpos = ($i + $pts_len); // Start just after the PHP start tag
-                                $pstate = dpConstants::PARSE_STATE_PHPCODE;
+                                $pstate = dpConstants::PARSE_STATE_PHPCODE;  // found <?php start tag?
                                 continue 2;
                             } // Start PHP tag?
                         } // check for PHP tag
                         break;
 
-                    case dpConstants::PARSE_STATE_PHPCODE:
+                    case dpConstants::PARSE_STATE_PHPCODE :
                         if (strpos ("'\"", $body[$i]) !== false)
                         {
                             $quote_level++;
@@ -858,7 +896,7 @@ class dpPage extends dpData
                         } // check of PHP end tag?
                         break;
 
-                    case dpConstants::PARSE_STATE_IN_QUOTE:
+                    case dpConstants::PARSE_STATE_IN_QUOTE :
                         // Check of escapes
                         if ($body[$i] == "\\")
                         {
@@ -896,10 +934,11 @@ class dpPage extends dpData
             } // Does pointers differ?
         } // Has string length?
 
-        return ($body_elements);
+        return $body_elements;
     } // processTagBody
 
 
+    // $param_string like 'key="value" key="value"'
     private function processTagParameters ($param_string)
     {
         $params = array ();
@@ -912,7 +951,13 @@ class dpPage extends dpData
             {
                 switch ($pstate)
                 {
-                    case dpConstants::PARSE_STATE_PARAM_NAME:
+                    case dpConstants::PARSE_STATE_PARAM_NAME :
+                        if ($pstr[$i] == '@')
+                        {
+                            $i++;
+                            $pstate = dpConstants::PARSE_STATE_PARAM_RETURN_LABEL;
+                            continue 2;
+                        }
                         if ($pstr[$i] == '=')
                         {
                             $i++;
@@ -923,7 +968,19 @@ class dpPage extends dpData
                         $key .= $pstr[$i];
                         break;
 
-                    case dpConstants::PARSE_STATE_PARAM_VALUE:
+                    case dpConstants::PARSE_STATE_PARAM_RETURN_LABEL :
+                        if (ctype_space ($pstr[$i]) || (strpos ('</>', $pstr[$i]) !== false))
+                        {
+                            $return_key = trim ($key);
+                            $params[dpConstants::DP_RETURN_LABEL_PREFIX.trim ($return_key)] = $return_key;
+                            $key = '';
+                            $pstate = dpConstants::PARSE_STATE_PARAM_NAME;
+                            continue 2;
+                        } // reached a space?
+                        $key .= $pstr[$i];
+                        break;
+
+                    case dpConstants::PARSE_STATE_PARAM_VALUE :
                         if (strpos ("\"'", $pstr[$i]) !== false)
                         {
                             $quote_char = $pstr[$i];
@@ -942,7 +999,7 @@ class dpPage extends dpData
                         $value .= $pstr[$i];
                         break;
 
-                    case dpConstants::PARSE_STATE_IN_QUOTE:
+                    case dpConstants::PARSE_STATE_IN_QUOTE :
                         if ($pstr[$i] == $quote_char)
                         {
                             $i++;
@@ -957,11 +1014,19 @@ class dpPage extends dpData
                 $i++;
             } // while
 
-            if (($value = trim ($value)) && ($key = trim ($key)))
-                $params[$key] = $value;
+            if ($pstate == dpConstants::PARSE_STATE_PARAM_RETURN_LABEL)
+            {
+                $return_key = trim ($key);
+                $params[dpConstants::DP_RETURN_LABEL_PREFIX.trim ($return_key)] = $return_key;
+            }
+            else
+            {
+                if (($value = trim ($value)) && ($key = trim ($key)))
+                    $params[$key] = $value;
+            }
         } // Has parameter string?
 
-        return ($params);
+        return $params;
     } // processTagParameters
 } // dpPage
 ?>
