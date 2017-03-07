@@ -17,20 +17,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-class dpAppPage extends dpPage
+abstract class dpAppPage extends dpPage
 {
     private $page_data = false;
     private $url_target_info = false;
-    private $_this;
+    private static $_this;
 
     function __construct ($dpPageObject = false)
     {
-        $_this = $dpPageObject;
+        self::$_this = $dpPageObject;
 
         $this->page_data = array ();
-        $this->dpURL = $_this->dpURL;
-        $this->session = $_this->session;
-        $this->url_target_info = $_this->getInfo('page_url_target_info');
+        $this->dpURL = self::$_this->dpURL;
+        $this->session = self::$_this->session;
+        $this->url_target_info = self::$_this->getInfo('page_url_target_info');
 
         // Initialize page_data container
         $this->page_data['appname'] = $this->getConfig ('dpScriptName');
@@ -72,7 +72,38 @@ class dpAppPage extends dpPage
     } // setValue
 
 
-    public function accessObject ($tag = false)
+    public function getParamValue ($key = false, $default = false)
+    {
+        $caller = next (debug_backtrace())['function'];
+        if (($key = trim ($key)) && ($params = $this->getValue ($caller.dpConstants::DP_PAGE_CLASS_FUNC_PARAMS_SUFFIX)))
+        {
+            if (isset ($params[0]) && is_array ($func_params = $params[0]))
+            {
+                if (isset ($func_params[$key]) && ($value = $func_params[$key]))
+                {
+                    if ($value[0] == '@')
+                        $value = trim (self::$_this->accessObject ($value));
+                    return $value;
+                }
+                else
+                {
+                    if ($value = trim (self::$_this->accessObject ($key)))
+                        return $value;
+                }
+            } // has parameters
+        } // has function parameters?
+
+        return $default;
+    } // getParamValue
+
+
+    public function getCallingPage ()
+    {
+        return self::$_this;
+    } // getCallingPage
+
+
+    public function accessObject ($tag = false, $params = false)
     {
         if ($tag[0] != '@')
             return '';
@@ -87,7 +118,7 @@ class dpAppPage extends dpPage
                 case 'integer' :
                 case 'double' :
                 case 'string' :
-                    return $value;
+                    break;
 
                 case 'array' :
                     if (($item_count = count ($label_items)) > 1)
@@ -100,8 +131,13 @@ class dpAppPage extends dpPage
                             else break;
                         } // for
 
-                        return ' '.$base_val;
-                    } // has reference?
+                        if ($base_val != $value)
+                        {
+                            $value = $base_val;
+                            break;
+                        } // Not an array?
+                    } // has reference items?
+                    $value = implode (', ', $value);
                     break;
 
                 case 'object' :
@@ -113,7 +149,28 @@ class dpAppPage extends dpPage
             } // switch
         } // has value?
 
-        return '';
+        if (!empty ($params))
+        {
+            if (isset ($params['format']))
+            {
+                switch ($params['format'])
+                {
+                    case 'dollar' :
+                        $value = '$'.number_format ((double) $value, 2);
+                        break;
+
+                    case 'date' :
+                        $formatstr = 'r';
+                        if (isset ($params['formatstr']))
+                            $formatstr = $params['formatstr'];
+                        $value = date ($formatstr, strtotime ($value));
+                        break;
+
+                } // switch
+            } // Do we need to transform value?
+        } // has parameters?
+
+        return ' '.$value;
     } // accessObject
 
 
@@ -127,21 +184,21 @@ class dpAppPage extends dpPage
             $tag = $tag['name'];  // Overrites tag
         } // an array?
 
-        $method = dpConstants::DP_PAGE_CLASS_FUNC_PREFIX.$tag;
         if (trim ($tag) != false)
         {
             // Does this method exists on this class?
+            $method = dpConstants::DP_PAGE_CLASS_FUNC_PREFIX.$tag;
             if (method_exists ($this, $method))
             {
-                $params = array();
-                if (is_array ($call_params) && !empty ($call_params))
-                    $params[] = $call_params;
-
                 if ($string === true)
                     ob_start();
 
+                $func_call_params = array ();
+                if ($call_params && !empty ($call_params))
+                    $func_call_params[] = $call_params;
+
                 // Call page object method
-                $ret = call_user_func_array (array ($this, $method), $params);
+                $ret = call_user_func_array (array ($this, $method), $func_call_params);
 
                 if ($string === true)
                 {
@@ -149,6 +206,7 @@ class dpAppPage extends dpPage
                     ob_end_clean();
                     return $out;
                 } // Output string?
+
                 return $ret;
             }
             else
@@ -162,7 +220,8 @@ class dpAppPage extends dpPage
                         // Does this element have an include?
                         if (isset ($ue[$i]['has_include']))
                         {
-                            $params = array (
+                            $params = array
+                            (
                                 'page_path' => $this->dpURL->getPath ($i).'/'.dpConstants::DP_COMMON_INCLUDE,
                                 'cache_path' => rtrim ($this->getInfo ('cache_page_path'), '/').$this->dpURL->getURLPath ($i).'/'.dpConstants::DP_COMMON_INCLUDE,
                                 'page_class_name' => $this->dpURL->getURLClassName ($i).'_'.dpConstants::DP_COMMON_INCLUDE
@@ -174,7 +233,10 @@ class dpAppPage extends dpPage
                                 // Check method... Do not blindly call 'callMethod' directly as this
                                 // would trigger unnecessary recursion
                                 if (method_exists ($dpAppObject, $method))
-                                    return ($dpAppObject->callMethod ($tag, $string));
+                                {
+                                    // Pass the calling object -- always at the first location
+                                    return $dpAppObject->callMethod ($tag, $string, $call_params);
+                                } // method exists?
                             } // Instantiate object
                         } // Has includes
                     } // foreach

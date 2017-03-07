@@ -40,6 +40,8 @@ class dpConstants
     const DP_PAGE_CLASS_PREFIX = 'dpAppPage_';
     const DP_PAGE_CLASS_FUNC_PREFIX = 'dpAppPageFunc_';
     const DP_PAGE_CLASS_PROP_PREFIX = 'dpAppPageProp_';
+    const DP_PAGE_CLASS_FUNC_PARAMS_SUFFIX = '_funcParams';
+
     const DP_PAGE_CLASS_INDENT = '    ';
     const DP_PHP_EXTENSION = '.php';
     const DP_RETURN_LABEL_PREFIX = 'dpReturnLabel_';
