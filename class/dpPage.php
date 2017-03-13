@@ -1067,6 +1067,18 @@ class dpPage extends dpData
     } // parseTagParameters
 
 
+    private function getPlainVariableName ($varname = false)
+    {
+        if (trim ($varname))
+        {
+            if ($varname[0] == '@')
+                return substr ($varname, 1);
+        }
+
+        return $varname;
+    } // getPlainVariableName
+
+
     private function generateIfStatement ($params = false)
     {
         if (is_array ($params) && !empty ($params))
@@ -1080,14 +1092,13 @@ class dpPage extends dpData
                     $ifstmt .= 'accessObject';
                 else $ifstmt .= 'getValue';
                 $ifstmt .= '(\''.$var.'\')';
-            } // value
-            if (isset ($params['count']))
+            }
+            else if (isset ($params['count']))
             {
-                $var = $params['count'];
-                if ($var[0] == '@')
-                    $var = substr ($var, 1);
+                $var = $this->getPlainVariableName ($params['count']);
                 $ifstmt .= 'count ($this->getValue (\''.$var.'\'))';
-            } // count
+            }
+            
 
             // Logical Operators
             if (isset ($params['greater']))

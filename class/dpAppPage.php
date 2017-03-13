@@ -60,7 +60,7 @@ abstract class dpAppPage extends dpPage
 
         // Page data has priority
         if (!empty ($this->page_data) && isset ($this->page_data[$tag]))
-            return $this->page_data[$tag];
+            return $this->applyTransformation ($this->page_data[$tag], $params);
         return $this->callMethod ($tag, $string, $params);
     } // getValue
 
@@ -70,6 +70,13 @@ abstract class dpAppPage extends dpPage
         if ((trim ($tag) != false) && is_array ($this->page_data))
             $this->page_data[$tag] = $value;
     } // setValue
+
+
+    public function unsetValue ($tag = false)
+    {
+        if (is_array ($this->page_data))
+            unset ($this->page_data[$tag]);
+    } // unsetValue
 
 
     public function getParamValue ($key = false, $default = false)
@@ -150,13 +157,35 @@ abstract class dpAppPage extends dpPage
         } // has value?
 
         if (!empty ($params))
+            $value = $this->applyTransformation ($value, $params);
+
+        return ' '.$value;
+    } // accessObject
+
+
+    public function applyTransformation ($value = false, $params = false)
+    {
+        if ($params && is_array ($params) && !empty ($params))
         {
             if (isset ($params['format']))
             {
                 switch ($params['format'])
                 {
                     case 'dollar' :
-                        $value = '$'.number_format ((double) $value, 2);
+                        $decimals = 2;
+                        if (isset ($params['decimals']))
+                        {
+                            $decnum = intVal ($params['decimals']);
+                            $decimals = ($decnum > 0 ? $decnum : 2);
+                        } // decimals specified?
+
+                        $actual_value = $value;
+                        $value = '';
+                        if ($actual_value < 0.00)
+                            $value .= '(';
+                        $value .= '$'.number_format ((double) abs ($actual_value), $decimals);
+                        if ($actual_value < 0.00)
+                            $value .= ')';
                         break;
 
                     case 'date' :
@@ -170,8 +199,8 @@ abstract class dpAppPage extends dpPage
             } // Do we need to transform value?
         } // has parameters?
 
-        return ' '.$value;
-    } // accessObject
+        return $value;
+    } // applyTransformation
 
 
     public function callMethod ($tag, $string = false, $call_params = false)
