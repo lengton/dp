@@ -212,7 +212,6 @@ abstract class dpAppPage extends dpPage
                 $call_params = $tag['params'];
             $tag = $tag['name'];  // Overrites tag
         } // an array?
-
         if (trim ($tag) != false)
         {
             // Does this method exists on this class?

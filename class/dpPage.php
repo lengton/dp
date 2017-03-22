@@ -103,18 +103,11 @@ class dpPage extends dpData
     } // register_autoload
 
 
-    private function get_milliseconds ()
-    {
-        list($usec, $sec) = explode(' ', microtime());
-        return ((int) $sec * 1000 + ((float) $usec * 1000));
-    } // get_milliseconds
-
-
     public function render ()
     {
         $out = '';
         $url_target_info = false;
-        $render_start_time = $this->get_milliseconds ();
+        $render_start_time = microtime (true);
 
         // Render only if URL is valid
         if ($this->dpURL)
@@ -177,11 +170,11 @@ class dpPage extends dpData
             } // Do we have page elements?
         } // URL valid?
 
-        $render_stop_time = $this->get_milliseconds ();
+        $render_stop_time = microtime (true);
 
         // Display render output
         $log_out = $this->getConfig ('dpScriptName').(($url_target_info && isset ($url_target_info['name'])) ? ': '.$url_target_info['name'] : '');
-        $this->log (sprintf ('Page [%s] rendered in %.3fs', $log_out, ($render_stop_time - $render_start_time) / 1000));
+        $this->log (sprintf ('Page [%s] rendered in %.3fs', $log_out, ($render_stop_time - $render_start_time)));
         echo $out;
     } // render
 
@@ -344,7 +337,7 @@ class dpPage extends dpData
                     if ((($tpos = strpos ($line, self::$dpTag, $i)) !== false) || ($pstate != dpConstants::PARSE_STATE_STATIC_TEXT))
                     {
                         // End Static text accumulation
-                        if (($tpos !== false) && ($i != $tpos))
+                        if ($tpos !== false)
                         {
                             $static_text .= substr ($line, $i, ($tpos - $i));
                             if (trim ($static_text))
@@ -1098,7 +1091,7 @@ class dpPage extends dpData
                 $var = $this->getPlainVariableName ($params['count']);
                 $ifstmt .= 'count ($this->getValue (\''.$var.'\'))';
             }
-            
+
 
             // Logical Operators
             if (isset ($params['greater']))
