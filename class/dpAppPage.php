@@ -195,6 +195,13 @@ abstract class dpAppPage extends dpPage
                         $value = date ($formatstr, strtotime ($value));
                         break;
 
+                    case 'custom' :
+                        $formatstr = '%s';
+                        if (isset ($params['formatstr']))
+                            $formatstr = $params['formatstr'];
+                        $value = sprintf ($formatstr, $value);
+                        break;
+
                 } // switch
             } // Do we need to transform value?
         } // has parameters?
