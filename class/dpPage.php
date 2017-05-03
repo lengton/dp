@@ -499,7 +499,7 @@ class dpPage extends dpData
         } // Write page data
 
         // Do we have a cached file?
-        if ($exists_pt)
+        if ($exists_pt && is_file ($cached_pg))
         {
             require_once $cached_pg;
 
