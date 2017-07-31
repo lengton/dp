@@ -167,6 +167,7 @@ abstract class dpAppPage extends dpPage
     {
         if ($params && is_array ($params) && !empty ($params))
         {
+            // Do we need to change formatting of values?
             if (isset ($params['format']))
             {
                 switch ($params['format'])
@@ -204,6 +205,13 @@ abstract class dpAppPage extends dpPage
 
                 } // switch
             } // Do we need to transform value?
+
+            // Do we need to call a function?
+            // Note: This assigns $value the 'return'ed value from the call. (not 'echo')
+            if (isset ($params['call']))
+            {
+                $value = $this->callMethod ($params['call'], false, array ('value' => $value));
+            } // call a function?
         } // has parameters?
 
         return $value;
