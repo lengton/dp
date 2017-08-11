@@ -163,6 +163,15 @@ abstract class dpAppPage extends dpPage
     } // accessObject
 
 
+    public function dpFormatDollar ($value, $decimals = 2)
+    {
+        $out = '$'.number_format ((double) abs ($value), $decimals);
+        if ($value < 0.00) $out = '('.$out.')';
+
+        return $out;
+    } // dpFormatDollar
+
+
     public function applyTransformation ($value = false, $params = false)
     {
         if ($params && is_array ($params) && !empty ($params))
@@ -179,14 +188,7 @@ abstract class dpAppPage extends dpPage
                             $decnum = intVal ($params['decimals']);
                             $decimals = ($decnum > 0 ? $decnum : 2);
                         } // decimals specified?
-
-                        $actual_value = $value;
-                        $value = '';
-                        if ($actual_value < 0.00)
-                            $value .= '(';
-                        $value .= '$'.number_format ((double) abs ($actual_value), $decimals);
-                        if ($actual_value < 0.00)
-                            $value .= ')';
+                        $value = $this->dpFormatDollar ($value, $decimals);
                         break;
 
                     case 'date' :
