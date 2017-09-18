@@ -198,6 +198,14 @@ abstract class dpAppPage extends dpPage
                         $value = date ($formatstr, strtotime ($value));
                         break;
 
+                    case 'upcase' :
+                        $value = strtoupper ($value);
+                        break;
+
+                    case 'lowcase' :
+                        $value = strtolower ($value);
+                        break;
+
                     case 'custom' :
                         $formatstr = '%s';
                         if (isset ($params['formatstr']))
