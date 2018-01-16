@@ -165,8 +165,8 @@ abstract class dpAppPage extends dpPage
 
     public function dpFormatDollar ($value, $decimals = 2)
     {
-        $out = '$'.number_format ((double) abs ($value), $decimals);
-        if ($value < 0.00) $out = '('.$out.')';
+        $out = '$'.number_format ((double) $value, $decimals);
+        //if ($value < 0.00) $out = '('.$out.')';
 
         return $out;
     } // dpFormatDollar
